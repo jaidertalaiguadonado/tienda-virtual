@@ -10,7 +10,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-    {{-- Agregué weight 300 por si quieres usar un font-weight más fino en el futuro --}}
 
     @vite(['resources/js/app.js'])
 
@@ -289,17 +288,16 @@
             font-weight: 800;
             color: var(--secondary-color);
             margin-top: 1rem;
-            margin-bottom: 0.75rem; /* Ajustado para un mejor espaciado */
+            margin-bottom: 0.75rem;
         }
 
         .product-card-stock {
-            font-size: 0.85rem; /* Más pequeño */
-            font-weight: 600; /* Ligeramente menos negrita */
+            font-size: 0.85rem;
+            font-weight: 600;
             text-align: center;
-            padding: 0.3rem 0.5rem; /* Padding más compacto */
+            padding: 0.3rem 0.5rem;
             border-radius: 0.3rem;
-            margin-top: auto; /* Empuja el estado al final del card-body */
-            /* font-family: 'Open Sans', sans-serif; ya es el default pero puedes especificar si quieres otra */
+            margin-top: auto;
         }
 
         .stock-available {
@@ -491,7 +489,8 @@
                 <div class="product-card">
                     <div class="product-card-image-container">
                         @if ($product->image_path)
-                            <img src="{{ asset('storage/' . $product->image_path) }}" alt="{{ $product->name }}" class="product-card-image">
+                            {{-- CAMBIO APLICADO AQUÍ --}}
+                            <img src="{{ Storage::disk('s3')->temporaryUrl($product->image_path, now()->addMinutes(10)) }}" alt="{{ $product->name }}" class="product-card-image">
                         @else
                             <img src="https://via.placeholder.com/400x300?text=Sin+Imagen" alt="Sin Imagen" class="product-card-image">
                         @endif
@@ -505,7 +504,7 @@
                             <p class="product-card-description">{{ $product->description }}</p>
                         </div>
                         <p class="product-card-price">${{ number_format($product->price, 2) }}</p>
-                        
+
                         <div class="product-card-actions">
                             @if ($product->is_in_stock ?? true)
                                 <span class="product-card-stock stock-available">En Stock</span>
