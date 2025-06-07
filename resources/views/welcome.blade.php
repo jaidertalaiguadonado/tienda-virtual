@@ -489,8 +489,8 @@
                 <div class="product-card">
                     <div class="product-card-image-container">
                         @if ($product->image_path)
-                            {{-- CAMBIO APLICADO AQUÍ --}}
-                            <img src="{{ Storage::disk('s3')->temporaryUrl($product->image_path, now()->addMinutes(10)) }}" alt="{{ $product->name }}" class="product-card-image">
+                            {{-- REVERTIDO: Vuelve a usar asset('storage/...') --}}
+                            <img src="{{ asset('storage/' . $product->image_path) }}" alt="{{ $product->name }}" class="product-card-image">
                         @else
                             <img src="https://via.placeholder.com/400x300?text=Sin+Imagen" alt="Sin Imagen" class="product-card-image">
                         @endif

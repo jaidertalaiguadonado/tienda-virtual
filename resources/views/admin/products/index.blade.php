@@ -439,13 +439,12 @@
                                 <tr>
                                     <td>{{ $product->id }}</td>
                                     <td>
-                                        {{-- INICIO DEL CAMBIO SUGERIDO --}}
                                         @if ($product->image_path)
-                                            <img src="{{ Storage::disk('s3')->temporaryUrl($product->image_path, now()->addMinutes(10)) }}" alt="{{ $product->name }}" class="product-image">
+                                            {{-- REVERTIDO: Vuelve a usar asset('storage/...') --}}
+                                            <img src="{{ asset('storage/' . $product->image_path) }}" alt="{{ $product->name }}" class="product-image">
                                         @else
                                             <div class="no-image-placeholder">No Img</div>
                                         @endif
-                                        {{-- FIN DEL CAMBIO SUGERIDO --}}
                                     </td>
                                     <td>{{ $product->name }}</td>
                                     <td>{{ $product->category->name ?? 'N/A' }}</td>
