@@ -489,8 +489,8 @@
                 <div class="product-card">
                     <div class="product-card-image-container">
                         @if ($product->image_path)
-                            {{-- REVERTIDO: Vuelve a usar asset('storage/...') --}}
-                            <img src="{{ asset('storage/' . $product->image_path) }}" alt="{{ $product->name }}" class="product-card-image">
+                            {{-- CAMBIO REALIZADO AQUÍ: Se usa directamente la URL de la imagen --}}
+                            <img src="{{ $product->image_path }}" alt="{{ $product->name }}" class="product-card-image">
                         @else
                             <img src="https://via.placeholder.com/400x300?text=Sin+Imagen" alt="Sin Imagen" class="product-card-image">
                         @endif

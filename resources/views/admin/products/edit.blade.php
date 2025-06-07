@@ -162,46 +162,15 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
-        
-        .file-input {
-            display: block;
-            width: 100%;
-            margin-top: 0.75rem; 
-            font-size: 0.95rem; 
-            color: var(--text-dark); 
-            border: 1px solid var(--border-color); 
-            border-radius: 0.5rem; 
-            cursor: pointer;
-            background-color: #f9fafb; 
-            padding: 0.75rem 1rem; 
-            transition: border-color 0.2s ease, background-color 0.2s ease;
-        }
-        .file-input:hover {
-            background-color: #f3f4f6;
-        }
-        .file-input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(106, 103, 241, 0.25);
-        }
-        .file-input::-webkit-file-upload-button {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 0.375rem;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-        }
-        .file-input::-webkit-file-upload-button:hover {
-            background-color: var(--primary-light);
-        }
-
-        .file-input-help-text {
-            margin-top: 0.25rem; 
-            font-size: 0.85rem; 
-            color: var(--text-light); 
-        }
+        /* Se remueven los estilos .file-input y relacionados, ya que no se usará input type="file" */
+        /*
+        .file-input { ... }
+        .file-input:hover { ... }
+        .file-input:focus { ... }
+        .file-input::-webkit-file-upload-button { ... }
+        .file-input::-webkit-file-upload-button:hover { ... }
+        .file-input-help-text { ... }
+        */
 
         
         .checkbox-container {
@@ -220,6 +189,24 @@
             height: 1.25rem;
             flex-shrink: 0; 
             cursor: pointer;
+            -webkit-appearance: none; /* Add this to remove default browser styles for checkboxes */
+            -moz-appearance: none;
+            appearance: none;
+            background-color: #fff;
+            position: relative;
+        }
+        .form-checkbox:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        .form-checkbox:checked::after {
+            content: '\2713'; /* Unicode checkmark character */
+            font-size: 0.8rem;
+            color: white;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
         .form-checkbox:focus {
             box-shadow: 0 0 0 3px rgba(106, 103, 241, 0.25); 
@@ -239,6 +226,7 @@
             align-items: center;
             justify-content: flex-end; 
             margin-top: 2rem; 
+            gap: 1rem; /* Added gap for spacing between buttons */
         }
 
         
@@ -256,7 +244,7 @@
             letter-spacing: 0.05em;
             transition: background-color 0.3s ease, transform 0.2s ease;
             text-decoration: none;
-            margin-right: 1rem; 
+            /* margin-right: 1rem; */ /* Removed as gap is used */
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             white-space: nowrap;
         }
@@ -325,7 +313,7 @@
             .card-container {
                 padding: 1.5rem;
             }
-            .form-input, .form-select, .form-textarea {
+            .form-input, .form-select, .form-textarea { /* .file-input removed */
                 padding: 0.6rem 0.8rem;
             }
             .primary-button, .cancel-button {
@@ -366,10 +354,10 @@
             .form-label {
                 font-size: 0.9rem;
             }
-            .form-input, .form-select, .form-textarea, .file-input {
+            .form-input, .form-select, .form-textarea { /* .file-input removed */
                 font-size: 0.9rem;
             }
-            .validation-error, .file-input-help-text {
+            .validation-error { /* .file-input-help-text removed */
                 font-size: 0.8rem;
             }
             .current-image {
@@ -391,7 +379,8 @@
     <div class="main-content-wrapper">
         <div class="content-container">
             <div class="card-container">
-                <form method="POST" action="{{ route('admin.products.update', $product) }}" enctype="multipart/form-data">
+                {{-- Importante: se quita enctype="multipart/form-data" ya que no subiremos archivos --}}
+                <form method="POST" action="{{ route('admin.products.update', $product) }}">
                     @csrf
                     @method('PUT')
 
@@ -442,18 +431,22 @@
                         @enderror
                     </div>
 
-                    @if ($product->image)
+                    {{-- Muestra la imagen actual si existe --}}
+                    @if ($product->image_path) {{-- Asegúrate de usar 'image_path' si así se llama en tu modelo/DB --}}
                         <div class="current-image-container form-field">
                             <label class="form-label">{{ __('Imagen Actual') }}</label>
-                            <img src="{{ asset($product->image) }}" alt="{{ $product->name }}" class="current-image">
+                            {{-- Se muestra la URL directamente --}}
+                            <img src="{{ $product->image_path }}" alt="{{ $product->name }}" class="current-image">
                         </div>
                     @endif
 
+                    {{-- CAMBIO CLAVE AQUÍ: De input type="file" a input type="text" --}}
                     <div class="form-field">
-                        <label for="image" class="form-label">{{ __('Nueva Imagen del Producto (Opcional)') }}</label>
-                        <input id="image" class="file-input" type="file" name="image" accept="image/*">
-                        <p class="file-input-help-text">Deja este campo vacío para mantener la imagen actual.</p>
-                        @error('image')
+                        <label for="image_path" class="form-label">{{ __('URL de la Imagen del Producto (Opcional)') }}</label>
+                        {{-- Se usa 'image_path' para el name e id --}}
+                        <input id="image_path" class="form-input" type="text" name="image_path" placeholder="https://ejemplo.com/tu-imagen.jpg" value="{{ old('image_path', $product->image_path) }}">
+                        <p class="file-input-help-text">Puedes cambiar la URL de la imagen aquí.</p>
+                        @error('image_path')
                             <div class="validation-error">{{ $message }}</div>
                         @enderror
                     </div>

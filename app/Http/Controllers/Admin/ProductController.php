@@ -7,7 +7,7 @@ use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage; // ¡Importante: Importar el facade Storage!
+use Illuminate\Support\Facades\Storage; // Aún lo mantenemos si hay otros usos de Storage en el futuro, pero no para la imagen de producto en este caso específico.
 
 class ProductController extends Controller
 {
@@ -43,18 +43,15 @@ class ProductController extends Controller
             'description' => 'nullable',
             'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Validación de imagen
+            // VALIDACIÓN PARA URL DE IMAGEN:
+            // 'nullable' permite que sea opcional
+            // 'url' asegura que el valor sea una URL válida si se proporciona
+            // 'max:2048' (o un valor más alto) para la longitud de la URL si es necesario
+            'image_path' => 'nullable|url|max:2048', 
         ]);
 
-        $imagePath = null; // Inicializa la ruta de la imagen como nula
-
-        // Si se ha subido una imagen, la almacena
-        if ($request->hasFile('image')) {
-            // Guarda la imagen en la carpeta 'products' dentro del disco 'public'
-            // Esto significa que se guardará en 'storage/app/public/products'
-            // y $imagePath contendrá la ruta relativa, ej: 'products/nombre_aleatorio.jpg'
-            $imagePath = $request->file('image')->store('products', 'public');
-        }
+        // La ruta de la imagen ahora viene directamente del input image_path
+        $imagePath = $request->input('image_path');
 
         // Crea el nuevo producto con los datos del request y la ruta de la imagen
         Product::create([
@@ -64,7 +61,7 @@ class ProductController extends Controller
             'description' => $request->description,
             'price' => $request->price,
             'stock' => $request->stock,
-            'image_path' => $imagePath, // Guarda la ruta relativa de la imagen
+            'image_path' => $imagePath, // Guarda la URL de la imagen
             'is_active' => $request->has('is_active'), // Comprueba si el checkbox está marcado
         ]);
 
@@ -102,21 +99,16 @@ class ProductController extends Controller
             'description' => 'nullable',
             'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Validación de imagen
+            // VALIDACIÓN PARA URL DE IMAGEN:
+            // 'nullable' permite que sea opcional
+            // 'url' asegura que el valor sea una URL válida si se proporciona
+            // 'max:2048' (o un valor más alto) para la longitud de la URL si es necesario
+            'image_path' => 'nullable|url|max:2048',
         ]);
 
-        // Mantiene la ruta de la imagen existente por defecto
-        $imagePath = $product->image_path;
-
-        // Si se sube una nueva imagen
-        if ($request->hasFile('image')) {
-            // Elimina la imagen antigua del almacenamiento si existe
-            if ($product->image_path && Storage::disk('public')->exists($product->image_path)) {
-                Storage::disk('public')->delete($product->image_path);
-            }
-            // Almacena la nueva imagen
-            $imagePath = $request->file('image')->store('products', 'public');
-        }
+        // La ruta de la imagen ahora viene directamente del input image_path
+        // No hay necesidad de verificar si se subió un archivo o eliminar el antiguo
+        $imagePath = $request->input('image_path');
 
         // Actualiza el producto con los nuevos datos y la ruta de la imagen
         $product->update([
@@ -126,7 +118,7 @@ class ProductController extends Controller
             'description' => $request->description,
             'price' => $request->price,
             'stock' => $request->stock,
-            'image_path' => $imagePath, // Actualiza la ruta de la imagen
+            'image_path' => $imagePath, // Actualiza con la URL de la imagen
             'is_active' => $request->has('is_active'),
         ]);
 
@@ -139,10 +131,15 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
-        // Elimina la imagen asociada del almacenamiento si existe
+        // NO es necesario eliminar la imagen del almacenamiento local
+        // porque ahora se asume que son URLs externas.
+        // Si en tu aplicación aún manejas imágenes subidas localmente
+        // en algún otro lugar, deberías conservar o adaptar esta lógica.
+        /*
         if ($product->image_path && Storage::disk('public')->exists($product->image_path)) {
             Storage::disk('public')->delete($product->image_path);
         }
+        */
 
         // Elimina el producto de la base de datos
         $product->delete();

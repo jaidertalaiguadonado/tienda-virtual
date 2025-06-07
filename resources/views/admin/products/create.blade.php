@@ -128,41 +128,8 @@
             margin-top: 0.5rem;
         }
 
-        
-        .file-input {
-            display: block;
-            width: 100%;
-            margin-top: 0.75rem;
-            font-size: 0.95rem;
-            color: var(--text-dark);
-            border: 1px solid var(--border-color);
-            border-radius: 0.5rem; 
-            cursor: pointer;
-            background-color: #f9fafb;
-            padding: 0.75rem 1rem;
-            transition: border-color 0.2s ease, background-color 0.2s ease;
-            box-sizing: border-box; 
-        }
-        .file-input:hover {
-            background-color: #f3f4f6;
-        }
-        .file-input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(106, 103, 241, 0.25);
-        }
-        .file-input::-webkit-file-upload-button {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 0.375rem;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-        }
-        .file-input::-webkit-file-upload-button:hover {
-            background-color: var(--primary-light);
-        }
+        /* Removido: .file-input y sus estilos no son necesarios para URLs */
+        /* .file-input { ... } */
 
         
         .checkbox-container {
@@ -299,7 +266,7 @@
             .page-title {
                 font-size: 1.8rem;
             }
-            .form-input, .form-select, .form-textarea, .file-input {
+            .form-input, .form-select, .form-textarea { /* .file-input removido */
                 padding: 0.7rem 0.9rem;
             }
             .primary-button, .cancel-button {
@@ -349,7 +316,7 @@
             .form-label {
                 font-size: 0.9rem;
             }
-            .form-input, .form-select, .form-textarea, .file-input {
+            .form-input, .form-select, .form-textarea { /* .file-input removido */
                 font-size: 0.9rem;
                 padding: 0.6rem 0.8rem;
             }
@@ -360,10 +327,7 @@
                 font-size: 0.75rem;
                 padding: 0.7rem 0.9rem;
             }
-            .file-input::-webkit-file-upload-button {
-                padding: 0.4rem 0.8rem;
-                font-size: 0.85rem;
-            }
+            /* Removido: .file-input::-webkit-file-upload-button y sus estilos */
         }
     </style>
 </head>
@@ -373,7 +337,8 @@
             {{ __('Crear Nuevo Producto') }}
         </h2>
 
-        <form method="POST" action="{{ route('admin.products.store') }}" enctype="multipart/form-data">
+        {{-- Importante: se quita enctype="multipart/form-data" ya que no subiremos archivos --}}
+        <form method="POST" action="{{ route('admin.products.store') }}">
             @csrf
 
             <div class="form-field">
@@ -423,10 +388,13 @@
                 @enderror
             </div>
 
+            {{-- CAMBIO CLAVE AQUÍ: De input type="file" a input type="text" --}}
             <div class="form-field">
-                <label for="image" class="form-label">{{ __('Imagen del Producto (Opcional)') }}</label>
-                <input id="image" class="file-input" type="file" name="image" accept="image/*">
-                @error('image')
+                <label for="image_path" class="form-label">{{ __('URL de la Imagen del Producto (Opcional)') }}</label>
+                {{-- Cambiado id y name a 'image_path' para consistencia con el campo en la BD --}}
+                <input id="image_path" class="form-input" type="text" name="image_path" placeholder="https://ejemplo.com/tu-imagen.jpg" value="{{ old('image_path') }}">
+                {{-- Nota: El error para la validación de URL se mostraría aquí --}}
+                @error('image_path')
                     <div class="validation-error">{{ $message }}</div>
                 @enderror
             </div>

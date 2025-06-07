@@ -440,8 +440,8 @@
                                     <td>{{ $product->id }}</td>
                                     <td>
                                         @if ($product->image_path)
-                                            {{-- REVERTIDO: Vuelve a usar asset('storage/...') --}}
-                                            <img src="{{ asset('storage/' . $product->image_path) }}" alt="{{ $product->name }}" class="product-image">
+                                            {{-- CAMBIO CLAVE AQUÍ: Se usa directamente la URL de la imagen --}}
+                                            <img src="{{ $product->image_path }}" alt="{{ $product->name }}" class="product-image">
                                         @else
                                             <div class="no-image-placeholder">No Img</div>
                                         @endif
