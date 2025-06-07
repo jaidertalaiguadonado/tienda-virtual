@@ -14,25 +14,25 @@
 
     {{-- ESTILOS ESPECÍFICOS PARA ESTA PÁGINA (todo el CSS aquí) --}}
     <style>
-        
+
         :root {
-            --primary-color: #007BFF; 
-            --primary-light: #66B2FF; 
-            --secondary-color: #17A2B8; 
-            --text-dark: #212529; 
-            --text-light: #6C757D; 
-            --background-light: #F8F9FA; 
-            --card-background: #ffffff; 
-            --border-color: #DEE2E6; 
-            --success-bg: #d4edda; 
-            --success-text: #155724; 
-            --error-bg: #f8d7da; 
-            --error-text: #721c24; 
-            --delete-button-color: #DC3545; 
-            --delete-button-hover: #b91c1c; 
+            --primary-color: #007BFF;
+            --primary-light: #66B2FF;
+            --secondary-color: #17A2B8;
+            --text-dark: #212529;
+            --text-light: #6C757D;
+            --background-light: #F8F9FA;
+            --card-background: #ffffff;
+            --border-color: #DEE2E6;
+            --success-bg: #d4edda;
+            --success-text: #155724;
+            --error-bg: #f8d7da;
+            --error-text: #721c24;
+            --delete-button-color: #DC3545;
+            --delete-button-hover: #b91c1c;
         }
 
-        
+
         body {
             font-family: 'Figtree', sans-serif;
             background-color: var(--background-light);
@@ -45,11 +45,11 @@
             font-size: 16px;
         }
 
-        
+
         .page-header-container {
-            background-color: var(--primary-color); 
+            background-color: var(--primary-color);
             border-bottom: 1px solid var(--primary-light);
-            padding: 1.5rem 2rem; 
+            padding: 1.5rem 2rem;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             margin-bottom: 2.5rem;
         }
@@ -57,33 +57,33 @@
         .page-header-content {
             max-width: 1280px;
             margin: 0 auto;
-            padding: 0; 
+            padding: 0;
         }
 
-        
+
         .page-title {
             font-size: 2rem;
             font-weight: 700;
-            color: var(--card-background); 
+            color: var(--card-background);
             line-height: 1.2;
             margin: 0;
         }
 
-        
+
         .main-content-wrapper {
             padding-top: 2rem;
             padding-bottom: 4rem;
         }
 
-        
+
         .content-container {
             max-width: 1280px;
             margin-left: auto;
             margin-right: auto;
-            padding: 0 2rem; 
+            padding: 0 2rem;
         }
 
-        
+
         .card-container {
             background-color: var(--card-background);
             overflow: hidden;
@@ -92,7 +92,7 @@
             padding: 2rem;
         }
 
-        
+
         .button-row {
             display: flex;
             justify-content: flex-end;
@@ -103,7 +103,7 @@
             display: inline-flex;
             align-items: center;
             padding: 0.8rem 1.5rem;
-            background-color: var(--secondary-color); 
+            background-color: var(--secondary-color);
             border: none;
             border-radius: 0.5rem;
             font-weight: 600;
@@ -114,17 +114,17 @@
             transition: background-color 0.3s ease, transform 0.2s ease;
             text-decoration: none;
             white-space: nowrap;
-            box-shadow: 0 4px 10px rgba(23, 162, 184, 0.2); 
+            box-shadow: 0 4px 10px rgba(23, 162, 184, 0.2);
         }
 
         .create-product-button:hover {
-            background-color: #138D9E; 
+            background-color: #138D9E;
             transform: translateY(-2px);
         }
 
         .create-product-button:focus {
             outline: none;
-            box-shadow: 0 0 0 4px rgba(23, 162, 184, 0.4); 
+            box-shadow: 0 0 0 4px rgba(23, 162, 184, 0.4);
         }
 
         .create-product-button:active {
@@ -132,7 +132,7 @@
             transform: translateY(0);
         }
 
-        
+
         .alert {
             padding: 1rem 1.5rem;
             border-radius: 0.5rem;
@@ -156,7 +156,7 @@
             color: var(--error-text);
         }
 
-        
+
         .table-responsive {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
@@ -206,7 +206,7 @@
             background-color: #fefefe;
         }
 
-        
+
         .product-image {
             height: 3.5rem;
             width: 3.5rem;
@@ -230,7 +230,7 @@
             border: 2px dashed var(--border-color);
         }
 
-        
+
         .status-badge {
             padding: 0.3rem 0.8rem;
             display: inline-flex;
@@ -250,7 +250,7 @@
             color: #dc3545;
         }
 
-        
+
         .action-buttons {
             text-align: right;
             font-size: 0.9rem;
@@ -281,25 +281,25 @@
             padding: 0;
         }
 
-        .action-button { 
+        .action-button {
             background: none;
             border: none;
             padding: 0.2rem 0.4rem;
             font-size: 0.9rem;
             font-weight: 500;
             cursor: pointer;
-            color: var(--delete-button-color); 
+            color: var(--delete-button-color);
             transition: color 0.2s ease, transform 0.2s ease;
             white-space: nowrap;
             border-radius: 0.25rem;
         }
 
         .action-button:hover {
-            color: var(--delete-button-hover); 
+            color: var(--delete-button-hover);
             transform: translateY(-1px);
         }
 
-        
+
         .no-products {
             padding: 1.5rem;
             text-align: center;
@@ -307,8 +307,8 @@
             font-style: italic;
         }
 
-        
-        @media (max-width: 992px) { 
+
+        @media (max-width: 992px) {
             .page-header-content,
             .content-container {
                 padding-left: 1.5rem;
@@ -331,13 +331,13 @@
                 width: 3rem;
             }
             .action-buttons {
-                flex-direction: column; 
+                flex-direction: column;
                 align-items: flex-end;
                 gap: 0.5rem;
             }
         }
 
-        @media (max-width: 768px) { 
+        @media (max-width: 768px) {
             .page-header-container {
                 padding-left: 1rem;
                 padding-right: 1rem;
@@ -356,10 +356,10 @@
             }
             .button-row {
                 margin-bottom: 1.5rem;
-                justify-content: center; 
+                justify-content: center;
             }
             .create-product-button {
-                width: 100%; 
+                width: 100%;
                 justify-content: center;
                 padding: 0.9rem 1rem;
                 font-size: 1rem;
@@ -376,16 +376,16 @@
                 width: 2.5rem;
             }
             .action-buttons {
-                flex-direction: row; 
-                justify-content: space-around; 
-                flex-wrap: wrap; 
-                gap: 0.5rem; 
+                flex-direction: row;
+                justify-content: space-around;
+                flex-wrap: wrap;
+                gap: 0.5rem;
             }
         }
 
-        @media (max-width: 480px) { 
+        @media (max-width: 480px) {
             .action-buttons {
-                flex-direction: column; 
+                flex-direction: column;
                 align-items: center;
             }
         }
@@ -439,12 +439,13 @@
                                 <tr>
                                     <td>{{ $product->id }}</td>
                                     <td>
-                                        {{-- Aquí el cambio importante: asumimos que image_path guarda la ruta relativa desde storage/app/public --}}
+                                        {{-- INICIO DEL CAMBIO SUGERIDO --}}
                                         @if ($product->image_path)
-                                            <img src="{{ asset('storage/' . $product->image_path) }}" alt="{{ $product->name }}" class="product-image">
+                                            <img src="{{ Storage::disk('s3')->temporaryUrl($product->image_path, now()->addMinutes(10)) }}" alt="{{ $product->name }}" class="product-image">
                                         @else
                                             <div class="no-image-placeholder">No Img</div>
                                         @endif
+                                        {{-- FIN DEL CAMBIO SUGERIDO --}}
                                     </td>
                                     <td>{{ $product->name }}</td>
                                     <td>{{ $product->category->name ?? 'N/A' }}</td>
