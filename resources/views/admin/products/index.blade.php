@@ -14,25 +14,25 @@
 
     {{-- ESTILOS ESPECÍFICOS PARA ESTA PÁGINA (todo el CSS aquí) --}}
     <style>
-        /* Variables CSS para colores - ¡Fácil de cambiar! */
+        
         :root {
-            --primary-color: #007BFF; /* Azul principal */
-            --primary-light: #66B2FF; /* Azul claro */
-            --secondary-color: #17A2B8; /* Azul cian secundario */
-            --text-dark: #212529; /* Negro para texto principal */
-            --text-light: #6C757D; /* Gris para texto secundario */
-            --background-light: #F8F9FA; /* Fondo muy claro */
-            --card-background: #ffffff; /* Fondo de tarjetas */
-            --border-color: #DEE2E6; /* Color de borde general */
-            --success-bg: #d4edda; /* Fondo de éxito (verde claro) */
-            --success-text: #155724; /* Texto de éxito (verde oscuro) */
-            --error-bg: #f8d7da; /* Fondo de error (rojo claro) */
-            --error-text: #721c24; /* Texto de error (rojo oscuro) */
-            --delete-button-color: #DC3545; /* Rojo para botón eliminar */
-            --delete-button-hover: #b91c1c; /* Rojo más oscuro para hover */
+            --primary-color: #007BFF; 
+            --primary-light: #66B2FF; 
+            --secondary-color: #17A2B8; 
+            --text-dark: #212529; 
+            --text-light: #6C757D; 
+            --background-light: #F8F9FA; 
+            --card-background: #ffffff; 
+            --border-color: #DEE2E6; 
+            --success-bg: #d4edda; 
+            --success-text: #155724; 
+            --error-bg: #f8d7da; 
+            --error-text: #721c24; 
+            --delete-button-color: #DC3545; 
+            --delete-button-hover: #b91c1c; 
         }
 
-        /* Base y tipografía */
+        
         body {
             font-family: 'Figtree', sans-serif;
             background-color: var(--background-light);
@@ -45,11 +45,11 @@
             font-size: 16px;
         }
 
-        /* Contenedor del encabezado de la página */
+        
         .page-header-container {
-            background-color: var(--primary-color); /* Fondo azul principal */
+            background-color: var(--primary-color); 
             border-bottom: 1px solid var(--primary-light);
-            padding: 1.5rem 2rem; /* Más padding en los lados */
+            padding: 1.5rem 2rem; 
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             margin-bottom: 2.5rem;
         }
@@ -57,33 +57,33 @@
         .page-header-content {
             max-width: 1280px;
             margin: 0 auto;
-            padding: 0; /* Ya tiene padding el contenedor padre */
+            padding: 0; 
         }
 
-        /* Título de la página (e.g., Administración de Productos) */
+        
         .page-title {
             font-size: 2rem;
             font-weight: 700;
-            color: var(--card-background); /* Color blanco para el título */
+            color: var(--card-background); 
             line-height: 1.2;
             margin: 0;
         }
 
-        /* Contenedor principal del contenido */
+        
         .main-content-wrapper {
             padding-top: 2rem;
             padding-bottom: 4rem;
         }
 
-        /* Contenedor central del contenido (centra la tarjeta) */
+        
         .content-container {
             max-width: 1280px;
             margin-left: auto;
             margin-right: auto;
-            padding: 0 2rem; /* Más padding en los lados */
+            padding: 0 2rem; 
         }
 
-        /* Contenedor de la tarjeta (el panel blanco con sombra) */
+        
         .card-container {
             background-color: var(--card-background);
             overflow: hidden;
@@ -92,7 +92,7 @@
             padding: 2rem;
         }
 
-        /* Fila del botón "Crear Nuevo Producto" */
+        
         .button-row {
             display: flex;
             justify-content: flex-end;
@@ -103,7 +103,7 @@
             display: inline-flex;
             align-items: center;
             padding: 0.8rem 1.5rem;
-            background-color: var(--secondary-color); /* Usar el color secundario */
+            background-color: var(--secondary-color); 
             border: none;
             border-radius: 0.5rem;
             font-weight: 600;
@@ -114,17 +114,17 @@
             transition: background-color 0.3s ease, transform 0.2s ease;
             text-decoration: none;
             white-space: nowrap;
-            box-shadow: 0 4px 10px rgba(23, 162, 184, 0.2); /* Sombra con el color secundario */
+            box-shadow: 0 4px 10px rgba(23, 162, 184, 0.2); 
         }
 
         .create-product-button:hover {
-            background-color: #138D9E; /* Tono más oscuro de secondary-color */
+            background-color: #138D9E; 
             transform: translateY(-2px);
         }
 
         .create-product-button:focus {
             outline: none;
-            box-shadow: 0 0 0 4px rgba(23, 162, 184, 0.4); /* Anillo de foco con secondary-color */
+            box-shadow: 0 0 0 4px rgba(23, 162, 184, 0.4); 
         }
 
         .create-product-button:active {
@@ -132,7 +132,7 @@
             transform: translateY(0);
         }
 
-        /* Alertas de sesión (éxito/error) */
+        
         .alert {
             padding: 1rem 1.5rem;
             border-radius: 0.5rem;
@@ -156,7 +156,7 @@
             color: var(--error-text);
         }
 
-        /* Contenedor de la tabla (para responsive) */
+        
         .table-responsive {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
@@ -206,7 +206,7 @@
             background-color: #fefefe;
         }
 
-        /* Estilos específicos para la imagen del producto en la tabla */
+        
         .product-image {
             height: 3.5rem;
             width: 3.5rem;
@@ -230,7 +230,7 @@
             border: 2px dashed var(--border-color);
         }
 
-        /* Badge de estado (Activo/Inactivo) */
+        
         .status-badge {
             padding: 0.3rem 0.8rem;
             display: inline-flex;
@@ -250,7 +250,7 @@
             color: #dc3545;
         }
 
-        /* Botones de acción en la tabla */
+        
         .action-buttons {
             text-align: right;
             font-size: 0.9rem;
@@ -281,25 +281,25 @@
             padding: 0;
         }
 
-        .action-button { /* Este es el botón de Eliminar */
+        .action-button { 
             background: none;
             border: none;
             padding: 0.2rem 0.4rem;
             font-size: 0.9rem;
             font-weight: 500;
             cursor: pointer;
-            color: var(--delete-button-color); /* Rojo de peligro */
+            color: var(--delete-button-color); 
             transition: color 0.2s ease, transform 0.2s ease;
             white-space: nowrap;
             border-radius: 0.25rem;
         }
 
         .action-button:hover {
-            color: var(--delete-button-hover); /* Rojo más oscuro */
+            color: var(--delete-button-hover); 
             transform: translateY(-1px);
         }
 
-        /* Estilo para cuando no hay productos */
+        
         .no-products {
             padding: 1.5rem;
             text-align: center;
@@ -307,8 +307,8 @@
             font-style: italic;
         }
 
-        /* Medias Queries (Responsive) */
-        @media (max-width: 992px) { /* Tabletas */
+        
+        @media (max-width: 992px) { 
             .page-header-content,
             .content-container {
                 padding-left: 1.5rem;
@@ -331,13 +331,13 @@
                 width: 3rem;
             }
             .action-buttons {
-                flex-direction: column; /* Apilar para pantallas más pequeñas */
+                flex-direction: column; 
                 align-items: flex-end;
                 gap: 0.5rem;
             }
         }
 
-        @media (max-width: 768px) { /* Móviles */
+        @media (max-width: 768px) { 
             .page-header-container {
                 padding-left: 1rem;
                 padding-right: 1rem;
@@ -356,10 +356,10 @@
             }
             .button-row {
                 margin-bottom: 1.5rem;
-                justify-content: center; /* Centrar botón en móviles */
+                justify-content: center; 
             }
             .create-product-button {
-                width: 100%; /* Botón ancho completo */
+                width: 100%; 
                 justify-content: center;
                 padding: 0.9rem 1rem;
                 font-size: 1rem;
@@ -376,16 +376,16 @@
                 width: 2.5rem;
             }
             .action-buttons {
-                flex-direction: row; /* Volver a fila si hay espacio */
-                justify-content: space-around; /* Distribuir uniformemente */
-                flex-wrap: wrap; /* Permitir que se envuelvan */
-                gap: 0.5rem; /* Ajustar el gap */
+                flex-direction: row; 
+                justify-content: space-around; 
+                flex-wrap: wrap; 
+                gap: 0.5rem; 
             }
         }
 
-        @media (max-width: 480px) { /* Móviles pequeños */
+        @media (max-width: 480px) { 
             .action-buttons {
-                flex-direction: column; /* Apilar nuevamente en pantallas muy pequeñas */
+                flex-direction: column; 
                 align-items: center;
             }
         }

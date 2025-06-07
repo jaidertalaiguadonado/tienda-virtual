@@ -18,12 +18,7 @@ class RouteServiceProvider extends ServiceProvider
      *
      * @var string
      */
-    // Puedes comentar o eliminar esta constante, ya que usaremos el método redirectTo()
-    // public const HOME = '/dashboard';
-
-    /**
-     * Define your route model bindings, pattern filters, and other route configuration.
-     */
+    
     public function boot(): void
     {
         RateLimiter::for('api', function (Request $request) {
@@ -50,7 +45,7 @@ class RouteServiceProvider extends ServiceProvider
             return '/dashboard'; // Ruta del dashboard para admins
         }
 
-        // Para cualquier otro usuario (cliente), redirige a la página de inicio (productos).
-        return '/'; // Ruta de la página de bienvenida con productos
+        
+        return '/'; 
     }
 }

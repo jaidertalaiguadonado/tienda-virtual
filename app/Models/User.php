@@ -26,7 +26,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
-        'is_admin' => 'boolean', // <--- ¡Esto es crucial!
+        'is_admin' => 'boolean', 
     ];
 
     /**
@@ -34,11 +34,7 @@ class User extends Authenticatable
      */
     public function isAdmin(): bool
     {
-        // Asegúrate de que $this->is_admin sea siempre un booleano.
-        // Si por alguna razón es null, el cast a 'boolean' en $casts debería manejarlo.
-        // Pero si la columna no existe o el valor no es booleano/entero (0/1),
-        // podría haber problemas.
-        return (bool) $this->is_admin; // Explícitamente castear a booleano si no estás seguro
-                                     // aunque el $casts en el modelo ya debería hacerlo.
+    
+        return (bool) $this->is_admin;
     }
 }

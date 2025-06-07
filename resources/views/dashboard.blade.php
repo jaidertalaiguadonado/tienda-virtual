@@ -14,26 +14,26 @@
 
     {{-- ESTILOS ESPECÍFICOS PARA ESTA PÁGINA (todo el CSS aquí) --}}
     <style>
-        /* Variables CSS para colores - ¡Fácil de cambiar! */
+        
         :root {
-            --primary-color: #007BFF; /* Usando el azul de tu página principal */
-            --primary-light: #66B2FF; /* Un azul más claro */
-            --secondary-color: #17A2B8; /* Tu azul secundario */
-            --text-dark: #212529; /* Tu color de texto oscuro */
-            --text-light: #6C757D; /* Tu color de texto claro */
-            --background-light: #F8F9FA; /* Tu color de fondo claro */
+            --primary-color: #007BFF; 
+            --primary-light: #66B2FF; 
+            --secondary-color: #17A2B8; 
+            --text-dark: #212529; 
+            --text-light: #6C757D; 
+            --background-light: #F8F9FA; 
             --card-background: #ffffff;
-            --border-color: #DEE2E6; /* Tu color de borde */
+            --border-color: #DEE2E6; 
             --success-bg: #d4edda;
             --success-text: #155724;
             --error-bg: #f8d7da;
             --error-text: #721c24;
-            --logout-color-text: #DC3545; /* Rojo para el texto de logout en el header (si quieres un color específico) */
-            --logout-color-bg: #ffffff; /* Blanco para el fondo del botón de logout en el header */
-            --logout-hover-bg: #f0f0f0; /* Gris claro para hover del botón de logout */
+            --logout-color-text: #DC3545; 
+            --logout-color-bg: #ffffff; 
+            --logout-hover-bg: #f0f0f0; 
         }
 
-        /* Base y tipografía */
+        
         body {
             font-family: 'Figtree', sans-serif;
             background-color: var(--background-light);
@@ -46,12 +46,12 @@
             font-size: 16px;
         }
 
-        /* Contenedor del encabezado de la página */
+        
         .page-header-container {
-            background-color: var(--primary-color); /* Fondo azul principal */
-            border-bottom: 1px solid var(--primary-light); /* Borde azul claro */
-            padding: 1.5rem 2rem; /* Añadí padding-left y padding-right por consistencia */
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Sombra para el header */
+            background-color: var(--primary-color); 
+            border-bottom: 1px solid var(--primary-light); 
+            padding: 1.5rem 2rem; 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); 
             margin-bottom: 2.5rem;
             display: flex;
             justify-content: space-between;
@@ -59,25 +59,25 @@
         }
 
         .page-header-content {
-            flex-grow: 1; /* Permite que el contenido crezca */
+            flex-grow: 1; 
         }
 
-        /* Título de la página */
+        
         .page-title {
             font-size: 2rem;
             font-weight: 700;
-            color: var(--card-background); /* Color blanco para el título */
+            color: var(--card-background); 
             line-height: 1.2;
             margin: 0;
         }
 
-        /* Contenedor principal del contenido */
+        
         .main-content-wrapper {
             padding-top: 2rem;
             padding-bottom: 4rem;
         }
 
-        /* Contenedor central del contenido (centra la tarjeta) */
+        
         .content-container {
             max-width: 1280px;
             margin-left: auto;
@@ -85,7 +85,7 @@
             padding: 0 2rem;
         }
 
-        /* Contenedor de la tarjeta (el panel blanco con sombra) */
+        
         .card-container {
             background-color: var(--card-background);
             overflow: hidden;
@@ -101,7 +101,7 @@
             margin-bottom: 2rem;
         }
 
-        /* Contenedor de los botones de acción */
+        
         .action-buttons-container {
             display: flex;
             justify-content: center;
@@ -109,7 +109,7 @@
             flex-wrap: wrap;
         }
 
-        /* Estilo base para los botones de acción */
+        
         .action-button {
             display: inline-flex;
             align-items: center;
@@ -135,7 +135,7 @@
 
         .action-button:focus {
             outline: none;
-            box-shadow: 0 0 0 5px rgba(0, 123, 255, 0.4); /* Anillo de enfoque con primary-color */
+            box-shadow: 0 0 0 5px rgba(0, 123, 255, 0.4); 
         }
 
         .action-button:active {
@@ -143,7 +143,7 @@
             box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
         }
 
-        /* Colores específicos para los botones */
+        
         .action-button.primary {
             background-color: var(--primary-color);
         }
@@ -157,13 +157,13 @@
         }
 
         .action-button.secondary:hover {
-            background-color: #138D9E; /* Un tono un poco más oscuro de secondary-color */
+            background-color: #138D9E; 
         }
 
-        /* Estilo para el botón de cerrar sesión en el HEADER */
+        
         .logout-button {
-            background-color: var(--logout-color-bg); /* Fondo blanco */
-            color: var(--primary-color); /* Texto azul */
+            background-color: var(--logout-color-bg); 
+            color: var(--primary-color); 
             padding: 0.75rem 1.2rem;
             border: none;
             border-radius: 0.5rem;
@@ -175,27 +175,27 @@
         }
 
         .logout-button:hover {
-            background-color: var(--logout-hover-bg); /* Fondo gris claro en hover */
-            color: var(--primary-color); /* Mantener texto azul */
+            background-color: var(--logout-hover-bg); 
+            color: var(--primary-color); 
             transform: translateY(-1px);
         }
 
         .logout-button:focus {
             outline: none;
-            box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.4); /* Anillo de enfoque con primary-color */
+            box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.4); 
         }
 
-        /* Medias Queries (Responsive) */
-        @media (max-width: 992px) { /* Tabletas */
+        
+        @media (max-width: 992px) { 
             .page-header-container {
-                flex-direction: column; /* Apilar título y botón */
+                flex-direction: column; 
                 align-items: flex-start;
                 padding-left: 1.5rem;
                 padding-right: 1.5rem;
             }
             .page-header-content {
-                margin-bottom: 1rem; /* Espacio entre título y botón */
-                width: 100%; /* Asegura que ocupe todo el ancho disponible */
+                margin-bottom: 1rem; 
+                width: 100%; 
             }
             .page-title {
                 font-size: 1.8rem;
@@ -212,12 +212,12 @@
                 gap: 1rem;
             }
             .logout-button {
-                width: auto; /* Mantener auto width */
-                margin-top: 0; /* No hay margin-top extra aquí */
+                width: auto; 
+                margin-top: 0; 
             }
         }
 
-        @media (max-width: 768px) { /* Móviles */
+        @media (max-width: 768px) { 
             .page-header-container {
                 padding-left: 1rem;
                 padding-right: 1rem;
@@ -239,18 +239,18 @@
                 margin-bottom: 1.5rem;
             }
             .action-buttons-container {
-                flex-direction: column; /* Apilar botones verticalmente */
+                flex-direction: column; 
                 gap: 1rem;
             }
             .action-button {
-                width: 100%; /* Botones de ancho completo */
+                width: 100%; 
                 padding: 0.9rem 1.5rem;
                 font-size: 0.95rem;
                 min-width: unset;
             }
             .logout-button {
-                width: 100%; /* Botón de logout también a ancho completo en móvil */
-                margin-top: 1rem; /* Espacio extra si el header se apila */
+                width: 100%; 
+                margin-top: 1rem; 
             }
         }
     </style>

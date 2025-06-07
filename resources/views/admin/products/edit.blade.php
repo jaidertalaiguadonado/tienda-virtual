@@ -14,11 +14,11 @@
 
     {{-- ESTILOS ESPECÍFICOS PARA ESTA PÁGINA (todo el CSS aquí) --}}
     <style>
-        /* Variables CSS para colores - ¡Fácil de cambiar! */
+        
         :root {
-            --primary-color: #6a67f1; /* Azul violeta */
+            --primary-color: #6a67f1; 
             --primary-light: #8b89f8;
-            --secondary-color: #fca311; /* Naranja vibrante */
+            --secondary-color: #fca311; 
             --text-dark: #333;
             --text-light: #555;
             --background-light: #f8f9fa;
@@ -28,11 +28,11 @@
             --success-text: #155724;
             --error-bg: #f8d7da;
             --error-text: #721c24;
-            --danger-color: #dc3545; /* Para botones de eliminar/cancelar */
+            --danger-color: #dc3545; 
             --danger-light: #e65f6c;
         }
 
-        /* Base y tipografía */
+        
         body {
             font-family: 'Figtree', sans-serif;
             background-color: var(--background-light);
@@ -45,7 +45,7 @@
             font-size: 16px;
         }
 
-        /* Contenedor del encabezado de la página */
+        
         .page-header-container {
             background-color: var(--card-background);
             border-bottom: 1px solid var(--border-color);
@@ -60,7 +60,7 @@
             padding: 0 2rem;
         }
 
-        /* Título de la página */
+        
         .page-title {
             font-size: 2rem;
             font-weight: 700;
@@ -69,13 +69,13 @@
             margin: 0;
         }
 
-        /* Contenedor principal del contenido */
+        
         .main-content-wrapper {
             padding-top: 2rem;
             padding-bottom: 4rem;
         }
 
-        /* Contenedor central del contenido (centra la tarjeta) */
+        
         .content-container {
             max-width: 1280px;
             margin-left: auto;
@@ -83,7 +83,7 @@
             padding: 0 2rem;
         }
 
-        /* Contenedor de la tarjeta (el panel blanco con sombra) */
+        
         .card-container {
             background-color: var(--card-background);
             overflow: hidden;
@@ -92,34 +92,34 @@
             padding: 2rem;
         }
 
-        /* Contenedor de un campo de formulario */
+        
         .form-field {
-            margin-top: 1.5rem; /* mt-4 */
+            margin-top: 1.5rem; 
         }
         .form-field:first-child {
-            margin-top: 0; /* Primer campo no tiene margen superior */
+            margin-top: 0; 
         }
 
 
-        /* Labels de formulario */
+        
         .form-label {
             display: block;
-            font-size: 0.95rem; /* text-sm */
-            font-weight: 500; /* font-medium */
+            font-size: 0.95rem; 
+            font-weight: 500; 
             color: var(--text-dark);
-            margin-bottom: 0.5rem; /* Pequeño espacio debajo del label */
+            margin-bottom: 0.5rem; 
         }
 
-        /* Inputs de texto, número y select */
+        
         .form-input,
         .form-select,
         .form-textarea {
             display: block;
             width: 100%;
-            border: 1px solid var(--border-color); /* border-gray-300 */
-            border-radius: 0.5rem; /* rounded-md */
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
-            padding: 0.75rem 1rem; /* px-3 py-2 */
+            border: 1px solid var(--border-color); 
+            border-radius: 0.5rem; 
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); 
+            padding: 0.75rem 1rem; 
             font-size: 1rem;
             line-height: 1.5;
             color: var(--text-dark);
@@ -130,50 +130,50 @@
         .form-input:focus,
         .form-select:focus,
         .form-textarea:focus {
-            border-color: var(--primary-color); /* focus:border-indigo-500 */
-            box-shadow: 0 0 0 3px rgba(106, 103, 241, 0.25); /* focus:ring-indigo-500 */
+            border-color: var(--primary-color); 
+            box-shadow: 0 0 0 3px rgba(106, 103, 241, 0.25); 
             outline: none;
         }
 
-        /* Textarea */
+        
         .form-textarea {
-            resize: vertical; /* Permitir redimensionar verticalmente */
+            resize: vertical; 
         }
 
-        /* Error de validación */
+        
         .validation-error {
-            font-size: 0.85rem; /* text-sm */
-            color: var(--error-text); /* text-red-600 */
-            margin-top: 0.5rem; /* mt-2 */
+            font-size: 0.85rem; 
+            color: var(--error-text); 
+            margin-top: 0.5rem; 
         }
 
-        /* Contenedor de la imagen actual */
+        
         .current-image-container {
             margin-top: 1.5rem;
         }
 
         .current-image {
-            height: 6rem; /* h-24 */
-            width: 6rem; /* w-24 */
+            height: 6rem; 
+            width: 6rem; 
             object-fit: cover;
-            border-radius: 0.75rem; /* rounded-lg */
-            margin-top: 0.75rem; /* mt-2 */
+            border-radius: 0.75rem; 
+            margin-top: 0.75rem; 
             border: 2px solid var(--primary-light);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
-        /* Input de tipo file */
+        
         .file-input {
             display: block;
             width: 100%;
-            margin-top: 0.75rem; /* mt-1 */
-            font-size: 0.95rem; /* text-sm */
-            color: var(--text-dark); /* text-gray-900 */
-            border: 1px solid var(--border-color); /* border border-gray-300 */
-            border-radius: 0.5rem; /* rounded-lg */
+            margin-top: 0.75rem; 
+            font-size: 0.95rem; 
+            color: var(--text-dark); 
+            border: 1px solid var(--border-color); 
+            border-radius: 0.5rem; 
             cursor: pointer;
-            background-color: #f9fafb; /* bg-gray-50 */
-            padding: 0.75rem 1rem; /* Ajuste manual para que se vea bien */
+            background-color: #f9fafb; 
+            padding: 0.75rem 1rem; 
             transition: border-color 0.2s ease, background-color 0.2s ease;
         }
         .file-input:hover {
@@ -198,12 +198,12 @@
         }
 
         .file-input-help-text {
-            margin-top: 0.25rem; /* mt-1 */
-            font-size: 0.85rem; /* text-sm */
-            color: var(--text-light); /* text-gray-500 */
+            margin-top: 0.25rem; 
+            font-size: 0.85rem; 
+            color: var(--text-light); 
         }
 
-        /* Checkbox de Activo */
+        
         .checkbox-container {
             margin-top: 1.5rem;
             display: flex;
@@ -211,78 +211,78 @@
         }
 
         .form-checkbox {
-            border-radius: 0.25rem; /* rounded */
-            border: 1px solid var(--border-color); /* border-gray-300 */
-            color: var(--primary-color); /* text-indigo-600 */
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+            border-radius: 0.25rem; 
+            border: 1px solid var(--border-color); 
+            color: var(--primary-color); 
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); 
             transition: box-shadow 0.2s ease;
-            width: 1.25rem; /* Ajuste para un checkbox moderno */
+            width: 1.25rem; 
             height: 1.25rem;
-            flex-shrink: 0; /* Evita que se encoja */
+            flex-shrink: 0; 
             cursor: pointer;
         }
         .form-checkbox:focus {
-            box-shadow: 0 0 0 3px rgba(106, 103, 241, 0.25); /* focus:ring-indigo-500 */
+            box-shadow: 0 0 0 3px rgba(106, 103, 241, 0.25); 
             outline: none;
         }
 
         .checkbox-label {
-            margin-left: 0.5rem; /* ml-2 */
+            margin-left: 0.5rem; 
             font-size: 0.95rem;
             color: var(--text-dark);
             cursor: pointer;
         }
 
-        /* Contenedor de botones de acción al final del formulario */
+        
         .form-actions {
             display: flex;
             align-items: center;
-            justify-content: flex-end; /* justify-end */
-            margin-top: 2rem; /* mt-4 */
+            justify-content: flex-end; 
+            margin-top: 2rem; 
         }
 
-        /* Botón Cancelar */
+        
         .cancel-button {
             display: inline-flex;
             align-items: center;
-            padding: 0.75rem 1.5rem; /* px-4 py-2 */
-            background-color: #6c757d; /* bg-gray-600 */
+            padding: 0.75rem 1.5rem; 
+            background-color: #6c757d; 
             border: none;
             border-radius: 0.5rem;
             font-weight: 600;
-            font-size: 0.85rem; /* text-xs */
+            font-size: 0.85rem; 
             color: white;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             transition: background-color 0.3s ease, transform 0.2s ease;
             text-decoration: none;
-            margin-right: 1rem; /* mr-4 */
+            margin-right: 1rem; 
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             white-space: nowrap;
         }
 
         .cancel-button:hover {
-            background-color: #5a6268; /* hover:bg-gray-500 */
+            background-color: #5a6268; 
             transform: translateY(-2px);
         }
 
         .cancel-button:focus {
             outline: none;
-            background-color: #5a6268; /* focus:bg-gray-500 */
-            box-shadow: 0 0 0 4px rgba(108, 117, 125, 0.3); /* focus:ring-indigo-500 etc. */
+            background-color: #5a6268; 
+            box-shadow: 0 0 0 4px rgba(108, 117, 125, 0.3); 
         }
 
         .cancel-button:active {
-            background-color: #495057; /* active:bg-gray-700 */
+            background-color: #495057; 
             transform: translateY(0);
         }
 
-        /* Botón Primario (Actualizar Producto) */
+        
         .primary-button {
             display: inline-flex;
             align-items: center;
             padding: 0.75rem 1.5rem;
-            background-color: var(--primary-color); /* bg-gray-800 */
+            background-color: var(--primary-color); 
             border: none;
             border-radius: 0.5rem;
             font-weight: 600;
@@ -297,23 +297,23 @@
         }
 
         .primary-button:hover {
-            background-color: var(--primary-light); /* hover:bg-gray-700 */
+            background-color: var(--primary-light); 
             transform: translateY(-2px);
         }
 
         .primary-button:focus {
             outline: none;
-            background-color: var(--primary-light); /* focus:bg-gray-700 */
+            background-color: var(--primary-light); 
             box-shadow: 0 0 0 4px rgba(106, 103, 241, 0.4);
         }
 
         .primary-button:active {
-            background-color: var(--primary-color); /* active:bg-gray-900 */
+            background-color: var(--primary-color); 
             transform: translateY(0);
         }
 
-        /* Medias Queries (Responsive) */
-        @media (max-width: 992px) { /* Tabletas */
+        
+        @media (max-width: 992px) { 
             .page-header-content,
             .content-container {
                 padding-left: 1.5rem;
@@ -334,7 +334,7 @@
             }
         }
 
-        @media (max-width: 768px) { /* Móviles */
+        @media (max-width: 768px) { 
             .page-header-content,
             .content-container {
                 padding-left: 1rem;
@@ -348,21 +348,21 @@
                 border-radius: 0.75rem;
             }
             .form-actions {
-                flex-direction: column; /* Apilar botones */
-                align-items: stretch; /* Estirar para ocupar el ancho completo */
-                gap: 1rem; /* Espacio entre botones apilados */
+                flex-direction: column; 
+                align-items: stretch; 
+                gap: 1rem; 
             }
             .cancel-button {
-                margin-right: 0; /* Eliminar margen derecho cuando está apilado */
+                margin-right: 0; 
             }
             .primary-button, .cancel-button {
-                width: 100%; /* Botones de ancho completo */
-                justify-content: center; /* Centrar texto */
+                width: 100%; 
+                justify-content: center; 
                 padding: 0.8rem 1rem;
             }
         }
 
-        @media (max-width: 480px) { /* Móviles pequeños */
+        @media (max-width: 480px) { 
             .form-label {
                 font-size: 0.9rem;
             }

@@ -13,11 +13,11 @@
     @vite(['resources/js/app.js'])
 
     <style>
-        /* Variables CSS para colores - ¡Fácil de cambiar! */
+        
         :root {
-            --primary-color: #6a67f1; /* Azul violeta */
+            --primary-color: #6a67f1; 
             --primary-light: #8b89f8;
-            --secondary-color: #fca311; /* Naranja vibrante */
+            --secondary-color: #fca311; 
             --text-dark: #333;
             --text-light: #555;
             --background-light: #f8f9fa;
@@ -27,11 +27,11 @@
             --success-text: #155724;
             --error-bg: #f8d7da;
             --error-text: #721c24;
-            --danger-color: #dc3545; /* Para botones de eliminar/cancelar */
+            --danger-color: #dc3545; 
             --danger-light: #e65f6c;
         }
 
-        /* Base y tipografía */
+        
         body {
             font-family: 'Figtree', sans-serif;
             background-color: var(--background-light);
@@ -43,29 +43,29 @@
             color: var(--text-dark);
             font-size: 16px;
 
-            /* AGREGADO: Para centrar el contenido como en login/registro */
+            
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 2rem; /* Añade un poco de padding para evitar que la tarjeta toque los bordes en móviles */
-            box-sizing: border-box; /* Incluir padding en el cálculo del ancho/alto */
+            padding: 2rem; 
+            box-sizing: border-box; 
         }
 
-        /* Contenedor principal de la tarjeta (similar a login-card-container) */
-        .card-container { /* Renombrado de login-card-container a card-container para ser más genérico */
+        
+        .card-container { 
             background-color: var(--card-background);
             border-radius: 1rem;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            padding: 2.5rem; /* Más padding interno */
+            padding: 2.5rem; 
             width: 100%;
-            max-width: 500px; /* Un poco más ancho para formularios de producto */
-            margin: 2rem; /* Margen para pantallas más pequeñas */
-            box-sizing: border-box; /* Incluir padding en el ancho */
-            border: 1px solid var(--primary-light); /* Borde con un azul claro */
+            max-width: 500px; 
+            margin: 2rem; 
+            box-sizing: border-box; 
+            border: 1px solid var(--primary-light); 
         }
 
-        .page-title { /* Para usar como título dentro de la tarjeta si se quita el header */
+        .page-title { 
             font-size: 2rem;
             font-weight: 700;
             color: var(--primary-color);
@@ -73,7 +73,7 @@
             text-align: center;
         }
 
-        /* Contenedor de un campo de formulario */
+        
         .form-field {
             margin-top: 1.5rem;
         }
@@ -81,7 +81,7 @@
             margin-top: 0;
         }
 
-        /* Labels de formulario */
+        
         .form-label {
             display: block;
             font-size: 0.95rem;
@@ -90,7 +90,7 @@
             margin-bottom: 0.5rem;
         }
 
-        /* Inputs de texto, número y select */
+        
         .form-input,
         .form-select,
         .form-textarea {
@@ -105,7 +105,7 @@
             color: var(--text-dark);
             background-color: #fff;
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
-            box-sizing: border-box; /* Importante para el 100% de ancho */
+            box-sizing: border-box; 
         }
 
         .form-input:focus,
@@ -116,19 +116,19 @@
             outline: none;
         }
 
-        /* Textarea */
+        
         .form-textarea {
             resize: vertical;
         }
 
-        /* Error de validación */
+        
         .validation-error {
             font-size: 0.85rem;
             color: var(--error-text);
             margin-top: 0.5rem;
         }
 
-        /* Input de tipo file */
+        
         .file-input {
             display: block;
             width: 100%;
@@ -136,12 +136,12 @@
             font-size: 0.95rem;
             color: var(--text-dark);
             border: 1px solid var(--border-color);
-            border-radius: 0.5rem; /* Cambiado a 0.5rem para consistencia con otros inputs */
+            border-radius: 0.5rem; 
             cursor: pointer;
             background-color: #f9fafb;
             padding: 0.75rem 1rem;
             transition: border-color 0.2s ease, background-color 0.2s ease;
-            box-sizing: border-box; /* Importante para el 100% de ancho */
+            box-sizing: border-box; 
         }
         .file-input:hover {
             background-color: #f3f4f6;
@@ -164,7 +164,7 @@
             background-color: var(--primary-light);
         }
 
-        /* Checkbox de Activo */
+        
         .checkbox-container {
             margin-top: 1.5rem;
             display: flex;
@@ -181,7 +181,7 @@
             height: 1.25rem;
             flex-shrink: 0;
             cursor: pointer;
-            -webkit-appearance: none; /* Reset para personalizar mejor */
+            -webkit-appearance: none; 
             -moz-appearance: none;
             appearance: none;
             background-color: #fff;
@@ -192,7 +192,7 @@
             border-color: var(--primary-color);
         }
         .form-checkbox:checked::after {
-            content: '\2713'; /* Tick mark */
+            content: '\2713'; 
             font-size: 0.8rem;
             color: white;
             position: absolute;
@@ -212,16 +212,16 @@
             cursor: pointer;
         }
 
-        /* Contenedor de botones de acción al final del formulario */
+        
         .form-actions {
             display: flex;
             align-items: center;
             justify-content: flex-end;
             margin-top: 2rem;
-            gap: 1rem; /* Espacio entre botones */
+            gap: 1rem; 
         }
 
-        /* Botón Cancelar */
+        
         .cancel-button {
             display: inline-flex;
             align-items: center;
@@ -256,7 +256,7 @@
             transform: translateY(0);
         }
 
-        /* Botón Primario (Guardar Producto) */
+        
         .primary-button {
             display: inline-flex;
             align-items: center;
@@ -291,10 +291,10 @@
             transform: translateY(0);
         }
 
-        /* Medias Queries (Responsive) */
+        
         @media (max-width: 992px) {
             .card-container {
-                padding: 2rem; /* Mantener buen padding en tablets */
+                padding: 2rem; 
             }
             .page-title {
                 font-size: 1.8rem;
@@ -310,12 +310,12 @@
 
         @media (max-width: 768px) {
             body {
-                padding: 1.5rem; /* Reducir padding del body en móviles */
+                padding: 1.5rem; 
             }
             .card-container {
                 padding: 1.5rem;
                 border-radius: 0.75rem;
-                margin: 0; /* Eliminar margen extra si body ya tiene padding */
+                margin: 0; 
             }
             .page-title {
                 font-size: 1.6rem;
@@ -335,7 +335,7 @@
                 padding: 0.8rem 1rem;
             }
             .form-field {
-                margin-top: 1rem; /* Reducir un poco el margen entre campos */
+                margin-top: 1rem; 
             }
         }
 

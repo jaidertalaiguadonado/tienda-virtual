@@ -15,25 +15,25 @@
 
     {{-- ESTILOS ESPECÍFICOS PARA ESTA PÁGINA (todo nuestro CSS personalizado) --}}
     <style>
-        /* Variables CSS para colores - ¡Fácil de cambiar! */
+        
         :root {
-            --primary-color: #007BFF; /* Azul principal */
-            --primary-light: #66B2FF; /* Azul claro para hover */
-            --secondary-color: #17A2B8; /* Azul cian secundario */
-            --text-dark: #212529; /* Negro para texto principal */
-            --text-light: #6C757D; /* Gris para texto secundario */
-            --background-light: #F8F9FA; /* Fondo muy claro */
-            --card-background: #ffffff; /* Fondo de tarjetas */
-            --border-color: #DEE2E6; /* Color de borde general */
-            --success-bg: #d4edda; /* Fondo de éxito (verde claro) */
-            --success-text: #155724; /* Texto de éxito (verde oscuro) */
-            --error-bg: #f8d7da; /* Fondo de error (rojo claro) */
-            --error-text: #721c24; /* Texto de error (rojo oscuro) */
-            --delete-button-color: #DC3545; /* Rojo para botón eliminar */
-            --delete-button-hover: #b91c1c; /* Rojo más oscuro para hover */
+            --primary-color: #007BFF; 
+            --primary-light: #66B2FF; 
+            --secondary-color: #17A2B8; 
+            --text-dark: #212529; 
+            --text-light: #6C757D; 
+            --background-light: #F8F9FA; 
+            --card-background: #ffffff; 
+            --border-color: #DEE2E6; 
+            --success-bg: #d4edda; 
+            --success-text: #155724; 
+            --error-bg: #f8d7da; 
+            --error-text: #721c24; 
+            --delete-button-color: #DC3545; 
+            --delete-button-hover: #b91c1c; 
         }
 
-        /* Base y tipografía */
+        
         body {
             font-family: 'Figtree', sans-serif;
             background-color: var(--background-light);
@@ -44,39 +44,39 @@
             line-height: 1.6;
             color: var(--text-dark);
             font-size: 16px;
-            display: flex; /* Para centrar el contenido de login */
-            justify-content: center; /* Centrar horizontalmente */
-            align-items: center; /* Centrar verticalmente */
-            min-height: 100vh; /* Ocupar toda la altura de la ventana */
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
         }
 
-        /* Contenedor principal de la tarjeta de login */
+        
         .login-card-container {
             background-color: var(--card-background);
             border-radius: 1rem;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            padding: 2.5rem; /* Más padding interno */
+            padding: 2.5rem; 
             width: 100%;
-            max-width: 420px; /* Ancho máximo para el formulario */
-            margin: 2rem; /* Margen para pantallas más pequeñas */
-            box-sizing: border-box; /* Incluir padding en el ancho */
-            border: 1px solid var(--primary-light); /* Borde de 1px con un azul claro */
+            max-width: 420px; 
+            margin: 2rem; 
+            box-sizing: border-box; 
+            border: 1px solid var(--primary-light); 
         }
 
         .login-title {
             font-size: 2rem;
             font-weight: 700;
             color: var(--primary-color);
-            margin-bottom: 2rem; /* Espacio debajo del título */
+            margin-bottom: 2rem; 
             text-align: center;
         }
 
-        /* Estilo para los divs de campo (Email, Password) */
+        
         .form-field {
-            margin-bottom: 1.5rem; /* Espacio entre campos */
+            margin-bottom: 1.5rem; 
         }
 
-        /* Estilo para las etiquetas de los inputs */
+        
         .input-label {
             display: block;
             font-size: 0.9rem;
@@ -85,7 +85,7 @@
             margin-bottom: 0.5rem;
         }
 
-        /* Estilo para los inputs de texto */
+        
         .text-input {
             width: 100%;
             padding: 0.75rem 1rem;
@@ -95,28 +95,28 @@
             color: var(--text-dark);
             background-color: #fcfcfc;
             transition: border-color 0.3s ease, box-shadow 0.3s ease;
-            box-sizing: border-box; /* Asegura que padding no aumente el ancho total */
+            box-sizing: border-box; 
         }
 
         .text-input:focus {
             outline: none;
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); /* Sombra de foco con primary-color */
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); 
         }
 
-        /* Estilo para los mensajes de error */
+        
         .input-error {
             font-size: 0.85rem;
             color: var(--error-text);
             margin-top: 0.5rem;
         }
 
-        /* Estilo para el checkbox "Remember me" */
+        
         .remember-me-label {
             display: flex;
             align-items: center;
             margin-top: 1.5rem;
-            margin-bottom: 1.5rem; /* Ajuste para dar espacio al botón y enlace */
+            margin-bottom: 1.5rem; 
         }
 
         .remember-me-checkbox {
@@ -124,7 +124,7 @@
             border-radius: 0.25rem;
             width: 1.15rem;
             height: 1.15rem;
-            accent-color: var(--primary-color); /* Color del check */
+            accent-color: var(--primary-color); 
             cursor: pointer;
         }
 
@@ -134,16 +134,16 @@
             margin-left: 0.5rem;
         }
 
-        /* Contenedor de botones y enlaces */
+        
         .form-actions {
             display: flex;
             align-items: center;
-            justify-content: space-between; /* Mantenemos para desktop */
-            margin-bottom: 1rem; /* Espacio entre la fila de acciones y el enlace de registro */
-            width: 100%; /* Asegurar que ocupe todo el ancho disponible */
+            justify-content: space-between; 
+            margin-bottom: 1rem; 
+            width: 100%; 
         }
 
-        /* Estilo para el enlace "Forgot your password?" */
+        
         .forgot-password-link {
             font-size: 0.85rem;
             color: var(--primary-color);
@@ -157,7 +157,7 @@
             text-decoration: underline;
         }
 
-        /* Estilo para el botón de Login */
+        
         .login-button {
             display: inline-flex;
             align-items: center;
@@ -173,7 +173,7 @@
             transition: background-color 0.3s ease, transform 0.2s ease;
             cursor: pointer;
             box-shadow: 0 3px 8px rgba(0, 123, 255, 0.2);
-            /* Aseguramos que no haya márgenes o anchos fijos no deseados */
+            
             margin: 0; 
             width: auto;
         }
@@ -193,10 +193,10 @@
             transform: translateY(0);
         }
 
-        /* Enlace para crear cuenta */
+        
         .register-link-container {
             text-align: center;
-            margin-top: 1.5rem; /* Espacio superior */
+            margin-top: 1.5rem; 
         }
 
         .register-link {
@@ -212,7 +212,7 @@
             text-decoration: underline;
         }
 
-        /* Mensajes de sesión */
+        
         .session-status {
             padding: 1rem 1.5rem;
             border-radius: 0.5rem;
@@ -224,7 +224,7 @@
             text-align: center;
         }
 
-        /* Responsive adjustments */
+        
         @media (max-width: 768px) {
             .login-card-container {
                 margin: 1.5rem;
@@ -236,22 +236,22 @@
             }
             
             .form-actions {
-                flex-direction: column; /* Apilar enlace y botón */
-                align-items: center;   /* Centra horizontalmente los elementos Hijos */
-                justify-content: center; /* Centra si hay espacio extra vertical */
-                gap: 1rem;             /* Controla el espacio entre el enlace y el botón cuando están apilados */
-                width: 100%;           /* Asegurar que el contenedor ocupe todo el ancho disponible */
+                flex-direction: column; 
+                align-items: center;   
+                justify-content: center; 
+                gap: 1rem;             
+                width: 100%;           
             }
 
             .forgot-password-link {
-                margin-top: 0; /* Reseteamos márgenes para que 'gap' controle el espacio */
-                text-align: center; /* Asegura que el texto dentro del enlace también se centre */
+                margin-top: 0; 
+                text-align: center; 
             }
             .login-button {
-                width: auto; /* Dejar que el contenido defina el ancho */
+                width: auto; 
                 padding: 0.7rem 1.4rem;
                 font-size: 0.95rem;
-                margin: 0; /* Asegurar que no tenga márgenes laterales */
+                margin: 0; 
             }
             .register-link-container {
                 margin-top: 1rem;
@@ -267,7 +267,7 @@
                 font-size: 1.5rem;
             }
             .login-button {
-                width: 100%; /* Botón de ancho completo en móviles muy pequeños */
+                width: 100%; 
             }
         }
     </style>

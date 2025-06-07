@@ -4,8 +4,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
 use Illuminate\Support\Facades\Route;
-use App\Models\Product; // Importante: necesitamos el modelo Product
-use Illuminate\Support\Facades\Auth; // Necesario para la redirección condicional en la ruta del dashboard
+use App\Models\Product; 
+use Illuminate\Support\Facades\Auth; 
 
 /*
 |--------------------------------------------------------------------------
@@ -23,15 +23,11 @@ Route::get('/', function () {
     // Obtenemos los últimos 8 productos, cargando también su categoría
     $products = Product::with('category')->latest()->take(8)->get();
     return view('welcome', compact('products'));
-})->name('welcome'); // Le damos un nombre a esta ruta, útil para redirecciones
-
-// Ruta del Dashboard (solo accesible para administradores)
-// Agregamos el middleware 'admin' aquí para protegerla
+})->name('welcome');
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified', 'admin'])->name('dashboard');
 
-// Rutas de perfil de usuario
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
