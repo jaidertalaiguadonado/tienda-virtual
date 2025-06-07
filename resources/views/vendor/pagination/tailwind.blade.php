@@ -1,6 +1,6 @@
 @if ($paginator->hasPages())
     <nav role="navigation" aria-label="{{ __('Pagination Navigation') }}" class="flex items-center justify-center mt-8 mb-8">
-        {{-- Sección para pantallas pequeñas (mobile pagination) --}}
+        {{-- SECCIÓN PARA PANTALLAS PEQUEÑAS (sm:hidden) --}}
         <div class="flex justify-between flex-1 sm:hidden">
             @if ($paginator->onFirstPage())
                 <span class="relative inline-flex items-center px-4 py-2 text-sm font-bold text-gray-500 bg-white border border-gray-300 cursor-default rounded-md leading-5 dark:text-gray-600 dark:bg-gray-800 dark:border-gray-600">
@@ -23,8 +23,8 @@
             @endif
         </div>
 
-        {{-- Sección para pantallas grandes (desktop pagination) --}}
-        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-center">
+        {{-- SECCIÓN PARA PANTALLAS GRANDES (sm:flex) --}}
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-center"> {{-- Centra el contenido en pantallas grandes --}}
             <div>
                 <p class="text-sm text-gray-700 leading-5 dark:text-gray-400">
                     {!! __('Showing') !!}
@@ -41,9 +41,9 @@
                 </p>
             </div>
 
-            <div class="ml-4"> {{-- Separación de los números/botones respecto al texto de "Showing results" --}}
+            <div class="ml-4"> {{-- Añade separación entre el texto "Showing results" y los botones de paginación --}}
                 <span class="relative z-0 inline-flex rtl:flex-row-reverse shadow-sm rounded-md">
-                    {{-- Previous Page Link --}}
+                    {{-- Previous Page Link for desktop --}}
                     @if ($paginator->onFirstPage())
                         <span aria-disabled="true" aria-label="{{ __('pagination.previous') }}">
                             <span class="relative inline-flex items-center px-4 py-2 text-sm font-bold text-gray-500 bg-white border border-gray-300 cursor-default rounded-l-md leading-5 dark:bg-gray-800 dark:border-gray-600" aria-hidden="true">
@@ -56,7 +56,7 @@
                         </a>
                     @endif
 
-                    {{-- Pagination Elements (números de página) --}}
+                    {{-- Pagination Elements (números de página para escritorio) --}}
                     @foreach ($elements as $element)
                         {{-- "Three Dots" Separator --}}
                         @if (is_string($element))
@@ -81,7 +81,7 @@
                         @endif
                     @endforeach
 
-                    {{-- Next Page Link --}}
+                    {{-- Next Page Link for desktop --}}
                     @if ($paginator->hasMorePages())
                         <a href="{{ $paginator->nextPageUrl() }}" rel="next" class="relative inline-flex items-center px-4 py-2 -ml-px text-sm font-bold text-gray-500 bg-white border border-gray-300 rounded-r-md leading-5 hover:text-gray-400 focus:z-10 focus:outline-none focus:ring ring-gray-300 focus:border-blue-300 active:bg-gray-100 active:text-gray-500 transition ease-in-out duration-150 dark:bg-gray-800 dark:border-gray-600 dark:active:bg-gray-700 dark:focus:border-blue-800" aria-label="{{ __('pagination.next') }}">
                             Siguiente »
