@@ -431,8 +431,7 @@
         }
     }
 
-    /* --- CSS Adicional para la Paginación (CORREGIDO) --- */
-    /* Contenedor principal para centrar la paginación */
+    /* --- CSS Adicional para la Paginación (AJUSTADO PARA UN TAMAÑO MÁS GRANDE) --- */
     .pagination-container {
         margin-top: 2rem;
         display: flex;
@@ -440,7 +439,6 @@
         padding-bottom: 2rem;
     }
 
-    /* Estilos para la lista no ordenada que Laravel genera por defecto para la paginación */
     .pagination {
         display: flex;
         list-style: none;
@@ -451,38 +449,33 @@
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
 
-    /* Estilos para cada elemento de la lista (números, Prev, Next) */
     .pagination li {
         /* No margin aquí para que los bordes se toquen */
     }
 
-    /* Estilos para los enlaces (números de página, Previous, Next) y para el span del número de página activo */
     .pagination li span,
     .pagination li a {
         display: block;
-        padding: 8px 12px; /* <-- Reducido de 10px 15px */
+        padding: 10px 15px; /* <-- Ajustado para ser un poco más grande */
         border: 1px solid var(--primary-color);
         text-decoration: none;
         color: var(--primary-color);
         transition: all 0.3s ease;
         font-weight: 600;
-        font-size: 0.85rem; /* <-- Reducido de 0.95rem */
+        font-size: 1rem; /* <-- Ajustado para ser un poco más grande */
     }
 
-    /* Ajuste de bordes para que no se dupliquen entre elementos adyacentes */
     .pagination li:not(:first-child) span,
     .pagination li:not(:first-child) a {
         border-left: none;
     }
 
-    /* Estilos para los enlaces al pasar el ratón por encima */
     .pagination li a:hover {
         background-color: var(--primary-color);
         color: var(--button-text);
         border-color: var(--primary-color);
     }
 
-    /* Estilos para el elemento de la página activa (span, no es un enlace) */
     .pagination li.active span {
         background-color: var(--primary-color);
         color: var(--button-text);
@@ -490,7 +483,6 @@
         cursor: default;
     }
 
-    /* Estilos para los elementos deshabilitados (Previous en la primera página, Next en la última) */
     .pagination li.disabled span {
         opacity: 0.6;
         cursor: not-allowed;
@@ -499,7 +491,6 @@
         border-color: var(--border-color);
     }
 
-    /* Eliminar el borde izquierdo para el primer elemento y derecho para el último si quieres un bloque sólido */
     .pagination li:first-child a,
     .pagination li:first-child span {
         border-top-left-radius: 0.5rem;
@@ -573,7 +564,6 @@
                 <div class="product-card">
                     <div class="product-card-image-container">
                         @if ($product->image_path)
-                            {{-- CAMBIO REALIZADO AQUÍ: Se usa directamente la URL de la imagen --}}
                             <img src="{{ $product->image_path }}" alt="{{ $product->name }}" class="product-card-image">
                         @else
                             <img src="https://via.placeholder.com/400x300?text=Sin+Imagen" alt="Sin Imagen" class="product-card-image">
@@ -605,6 +595,11 @@
         </div>
 
         <div class="pagination-container">
+            {{-- IMPORTANTE: LA MODIFICACIÓN DE "Previous" y "Next" a "Previo" y "Siguiente" --}}
+            {{-- Y su integración como enlaces de texto con los números, se hace en la plantilla de paginación de Laravel. --}}
+            {{-- Necesitas ejecutar 'php artisan vendor:publish --tag=laravel-pagination' --}}
+            {{-- y luego modificar el archivo 'resources/views/vendor/pagination/default.blade.php' (o el que uses) --}}
+            {{-- como se explicó en mi respuesta anterior para que se vea "Previo 1 2 3 Siguiente". --}}
             {{ $products->links() }}
         </div>
 
