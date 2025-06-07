@@ -468,6 +468,89 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
+
+        /* --- CSS Adicional para la Paginación --- */
+/* Contenedor principal para centrar la paginación */
+.pagination-container {
+    margin-top: 2rem; /* Espacio superior para separar de la cuadrícula de productos */
+    display: flex;
+    justify-content: center; /* Centra los elementos de paginación */
+    padding-bottom: 2rem; /* Espacio inferior para separar del footer, si lo necesitas */
+}
+
+/* Estilos para la lista no ordenada que Laravel genera por defecto para la paginación */
+.pagination {
+    display: flex; /* Permite que los elementos de la paginación estén en línea */
+    list-style: none; /* Elimina los puntos de la lista */
+    padding: 0;
+    margin: 0;
+    border-radius: 0.5rem; /* Bordes ligeramente redondeados para el grupo */
+    overflow: hidden; /* Asegura que los bordes redondeados se apliquen bien */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Sombra suave */
+}
+
+/* Estilos para cada elemento de la lista (números, Prev, Next) */
+.pagination li {
+    /* No margin aquí para que los bordes se toquen */
+    /* margin: 0 2px; */ /* Si quieres un pequeño espacio entre botones, úsalo */
+}
+
+/* Estilos para los enlaces (números de página, Previous, Next) y para el span del número de página activo */
+.pagination li span,
+.pagination li a {
+    display: block; /* Para que el padding y el border se apliquen correctamente */
+    padding: 10px 15px; /* Relleno interno para un tamaño adecuado */
+    border: 1px solid var(--primary-color); /* Borde con color primario */
+    text-decoration: none; /* Elimina el subrayado de los enlaces */
+    color: var(--primary-color); /* Color del texto del enlace */
+    transition: all 0.3s ease; /* Transición suave para efectos hover */
+    font-weight: 600; /* Texto seminegrita */
+    font-size: 0.95rem; /* Tamaño de fuente */
+}
+
+/* Ajuste de bordes para que no se dupliquen entre elementos adyacentes */
+.pagination li:not(:first-child) span,
+.pagination li:not(:first-child) a {
+    border-left: none;
+}
+
+/* Estilos para los enlaces al pasar el ratón por encima */
+.pagination li a:hover {
+    background-color: var(--primary-color); /* Fondo primario */
+    color: var(--button-text); /* Texto blanco */
+    border-color: var(--primary-color); /* Borde del mismo color que el fondo */
+}
+
+/* Estilos para el elemento de la página activa (span, no es un enlace) */
+.pagination li.active span {
+    background-color: var(--primary-color); /* Fondo primario */
+    color: var(--button-text); /* Texto blanco */
+    border-color: var(--primary-color); /* Borde del mismo color */
+    cursor: default; /* No es clicable */
+}
+
+/* Estilos para los elementos deshabilitados (Previous en la primera página, Next en la última) */
+.pagination li.disabled span {
+    opacity: 0.6; /* Reduce la opacidad */
+    cursor: not-allowed; /* Cambia el cursor */
+    background-color: var(--background-light); /* Fondo claro */
+    color: var(--text-light); /* Texto más claro */
+    border-color: var(--border-color); /* Borde más sutil */
+}
+
+/* Eliminar el borde izquierdo para el primer elemento y derecho para el último si quieres un bloque sólido */
+.pagination li:first-child a,
+.pagination li:first-child span {
+    border-top-left-radius: 0.5rem;
+    border-bottom-left-radius: 0.5rem;
+}
+
+.pagination li:last-child a,
+.pagination li:last-child span {
+    border-top-right-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+}
+/* Fin de CSS para Paginación */
         /* Fin de CSS para Paginación */
     </style>
 </head>
