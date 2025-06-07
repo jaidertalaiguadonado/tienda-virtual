@@ -4,8 +4,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
 use Illuminate\Support\Facades\Route;
-use App\Models\Product; 
-use Illuminate\Support\Facades\Auth; 
+use App\Models\Product; // Asegúrate de que esta línea esté presente
+use Illuminate\Support\Facades\Auth;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,10 +20,15 @@ use Illuminate\Support\Facades\Auth;
 
 // Ruta principal para la página de bienvenida con productos
 Route::get('/', function () {
-    // Obtenemos los últimos 8 productos, cargando también su categoría
-    $products = Product::with('category')->latest()->take(8)->get();
+    // CAMBIO AQUÍ: Ahora obtenemos más productos, por ejemplo, 12 por página.
+    // Si quieres mostrar TODOS los productos (cuidado con el rendimiento si son muchos),
+    // usa ->get() en lugar de ->paginate(12) y omite los enlaces de paginación en la vista.
+    $products = Product::with('category')->latest()->paginate(12); // <-- CORRECCIÓN
+
     return view('welcome', compact('products'));
 })->name('welcome');
+
+// Resto de tus rutas (sin cambios si ya funcionan bien)
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified', 'admin'])->name('dashboard');
@@ -34,12 +39,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// Rutas para el administrador (todas las rutas bajo /admin)
-// Protegidas por el middleware 'auth' (autenticado) y 'admin' (con rol de admin)
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::resource('categories', CategoryController::class);
     Route::resource('products', ProductController::class);
 });
 
-// Incluye las rutas de autenticación de Laravel (login, register, forgot password, etc.)
 require __DIR__.'/auth.php';

@@ -429,6 +429,46 @@
                 font-size: 1.4rem;
             }
         }
+
+        /* --- CSS Adicional para la Paginación --- */
+        .pagination-container {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+        .pagination {
+            display: flex;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .pagination li {
+            margin: 0 5px;
+        }
+        .pagination li span,
+        .pagination li a {
+            display: block;
+            padding: 8px 12px;
+            border: 1px solid var(--primary-color);
+            border-radius: 5px;
+            text-decoration: none;
+            color: var(--primary-color);
+            transition: all 0.3s ease;
+        }
+        .pagination li a:hover {
+            background-color: var(--primary-color);
+            color: var(--button-text);
+        }
+        .pagination li.active span {
+            background-color: var(--primary-color);
+            color: var(--button-text);
+            border-color: var(--primary-color);
+        }
+        .pagination li.disabled span {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        /* Fin de CSS para Paginación */
     </style>
 </head>
 <body class="font-sans antialiased">
@@ -519,6 +559,11 @@
                 <p style="grid-column: 1 / -1; text-align: center; color: var(--text-light); font-size: 1.2rem;">No hay productos disponibles en este momento.</p>
             @endforelse
         </div>
+
+        <div class="pagination-container">
+            {{ $products->links() }}
+        </div>
+
     </section>
 
     <footer class="footer">
