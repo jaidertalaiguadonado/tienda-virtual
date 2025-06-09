@@ -12,7 +12,14 @@ class MercadoPagoController extends Controller
 {
     public function __construct()
     {
-        MercadoPagoConfig::setAccessToken(config('services.mercadopago.access_token'));
+        // =========================================================================
+        // === MODIFICACIÓN TEMPORAL PARA DEPURACIÓN: HARDCODEANDO EL ACCESS TOKEN ===
+        // ¡RECUERDA ELIMINAR ESTA LÍNEA Y RESTAURAR LA ORIGINAL DESPUÉS DE DEPURAR!
+        // =========================================================================
+        MercadoPagoConfig::setAccessToken("APP_USR-2819903673318377-060916-5b83c88e82ab9402fb136522f050898c-1522977531");
+
+        // Esta es la línea ORIGINAL y CORRECTA que DEBES RESTAURAR al finalizar la depuración:
+        // MercadoPagoConfig::setAccessToken(config('services.mercadopago.access_token'));
     }
 
     public function createPaymentPreference(Request $request)
@@ -34,7 +41,7 @@ class MercadoPagoController extends Controller
                         "title" => $description,
                         "quantity" => 1,
                         "unit_price" => (float) $amount,
-                        "currency_id" => "COP"
+                        "currency_id" => "COP" // Asegúrate que esta sea la moneda correcta
                     ]
                 ],
                 "back_urls" => [
@@ -45,18 +52,16 @@ class MercadoPagoController extends Controller
                 "auto_return" => "approved",
                 "notification_url" => route('mercadopago.webhook') . '?source_news=webhooks',
                 "external_reference" => $externalReference,
-                "statement_descriptor" => "TIENDAJD",
+                "statement_descriptor" => "TIENDAJD", // Reemplaza con un descriptor corto para el extracto de tarjeta
             ]);
 
             return redirect($response->init_point);
 
         } catch (\MercadoPago\Exceptions\MPApiException $e) {
-            // **CORRECCIÓN AQUÍ:** Manejo de errores de la API de Mercado Pago
             $apiResponse = $e->getApiResponse();
-            $errorMessage = $e->getMessage(); // Mensaje de la excepción por defecto
+            $errorMessage = $e->getMessage();
             $errorDetails = [];
 
-            // Intenta extraer detalles del error de la respuesta de la API si están disponibles
             if ($apiResponse && property_exists($apiResponse, 'error') && $apiResponse->error) {
                 $errorMessage = $apiResponse->error->message ?? $errorMessage;
                 $errorDetails = $apiResponse->error->cause ?? [];
@@ -72,7 +77,7 @@ class MercadoPagoController extends Controller
                 } elseif (is_string($firstErrorCause)) {
                     $userMessage = 'Error al crear la preferencia de pago: ' . $firstErrorCause;
                 }
-            } elseif ($errorMessage !== $e->getMessage()) { // Si se obtuvo un mensaje más específico de la API
+            } elseif ($errorMessage !== $e->getMessage()) {
                 $userMessage = 'Error al crear la preferencia de pago: ' . $errorMessage;
             }
 
@@ -124,16 +129,22 @@ class MercadoPagoController extends Controller
 
                     \Log::info("Webhook: Procesando pago MP ID: {$paymentId}, Estado: {$paymentStatus}, Ref Externa: {$externalReference}");
 
-                    // ... (Tu lógica para actualizar la orden) ...
+                    // ... (Tu lógica para actualizar la orden, guardar el pago, etc.) ...
+                    // Por ejemplo:
+                    // $order = Order::where('external_reference', $externalReference)->first();
+                    // if ($order) {
+                    //     $order->mp_payment_id = $paymentId;
+                    //     $order->status = $this->mapMercadoPagoStatusToOrderStatus($paymentStatus);
+                    //     $order->save();
+                    // }
 
                 } else {
                     \Log::warning("Webhook: No se pudo obtener el objeto de pago para ID: {$id}");
                 }
 
             } catch (\MercadoPago\Exceptions\MPApiException $e) {
-                // **CORRECCIÓN AQUÍ:** Manejo de errores de la API de Mercado Pago en el webhook
                 $apiResponse = $e->getApiResponse();
-                $errorMessage = $e->getMessage(); // Mensaje de la excepción por defecto
+                $errorMessage = $e->getMessage();
                 $errorDetails = [];
 
                 if ($apiResponse && property_exists($apiResponse, 'error') && $apiResponse->error) {
@@ -148,4 +159,20 @@ class MercadoPagoController extends Controller
         }
         return response()->json(['status' => 'ok'], 200);
     }
+
+    // Opcional: una función para mapear los estados de MP a tus estados de orden internos
+    // private function mapMercadoPagoStatusToOrderStatus(string $mpStatus): string
+    // {
+    //     switch ($mpStatus) {
+    //         case 'approved':
+    //             return 'paid';
+    //         case 'pending':
+    //             return 'pending_payment';
+    //         case 'rejected':
+    //             return 'cancelled';
+    //         // Agrega más estados según sea necesario
+    //         default:
+    //             return 'unknown';
+    //     }
+    // }
 }
