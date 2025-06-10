@@ -43,16 +43,25 @@
     --mercadopago-text-color: #ffffff;
 }
 
+html, body {
+    height: 100%; /* Fundamental para que flexbox funcione en el body */
+    margin: 0;
+    padding: 0;
+}
+
 body {
     font-family: 'Open Sans', sans-serif;
     background-color: var(--background-light);
-    margin: 0;
-    padding: 0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     line-height: 1.6;
     color: var(--text-dark);
     font-size: 16px;
+
+    /* Sticky Footer - Flexbox layout */
+    display: flex;
+    flex-direction: column; /* Apila los hijos verticalmente */
+    min-height: 100vh; /* Asegura que ocupe al menos la altura de la ventana */
 }
 
 a {
@@ -71,6 +80,7 @@ a {
     align-items: center;
     position: relative;
     z-index: 1000; /* Asegura que el navbar esté por encima de otros elementos */
+    flex-shrink: 0; /* Evita que el navbar se encoja */
 }
 
 .navbar-brand {
@@ -159,7 +169,7 @@ a {
     box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.4);
 }
 
-/* Cart Specific Styles */
+/* Main Content Area */
 .cart-container {
     max-width: 1000px;
     margin: 3rem auto;
@@ -167,6 +177,7 @@ a {
     background-color: var(--card-background);
     border-radius: 1rem;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    flex-grow: 1; /* Permite que este contenedor ocupe todo el espacio disponible */
 }
 
 .cart-title {
@@ -300,13 +311,27 @@ a {
 
 .cart-actions {
     display: flex;
-    justify-content: space-between;
+    justify-content: center; /* Centra los botones horizontalmente */
     align-items: center;
     margin-top: 2rem;
     flex-wrap: wrap;
-    gap: 1.5rem;
+    gap: 1.5rem; /* Aumenta el espacio entre botones */
 }
 
+/* Asegura que los botones ocupen el mismo ancho posible */
+.cart-actions .continue-shopping-button,
+.cart-actions .mercadopago-pay-button,
+.cart-actions form { /* El formulario también debe ser flexible */
+    flex: 1; /* Permite que crezcan y compartan el espacio */
+    min-width: 250px; /* Tamaño mínimo para cada botón/formulario */
+    max-width: 45%; /* Limita el ancho para que no se estiren demasiado en pantallas grandes */
+    box-sizing: border-box; /* Incluye padding y border en el width */
+}
+
+/* Para el formulario de Mercado Pago, asegúrate de que el botón dentro se estire */
+.cart-actions form button {
+    width: 100%; /* El botón ocupa todo el ancho del formulario */
+}
 
 .continue-shopping-button,
 .mercadopago-pay-button {
@@ -320,8 +345,6 @@ a {
     text-align: center;
     border: none;
     cursor: pointer;
-    flex-grow: 1; /* Permite que los botones crezcan para llenar el espacio */
-    min-width: 200px; /* Asegura un tamaño mínimo para el botón */
 }
 
 .continue-shopping-button {
@@ -345,8 +368,7 @@ a {
     transform: translateY(-2px);
 }
 
-
-/* Footer Styles (copied from welcome.blade.php for consistency) */
+/* Footer Styles */
 .footer {
     background-color: var(--primary-color);
     color: var(--button-text);
@@ -355,7 +377,8 @@ a {
     font-size: 0.9rem;
     border-top-left-radius: 2rem;
     border-top-right-radius: 2rem;
-    margin-top: 4rem;
+    margin-top: 4rem; /* Espacio antes del footer */
+    flex-shrink: 0; /* Evita que el footer se encoja */
 }
 
 .footer p {
@@ -367,24 +390,22 @@ a {
 @media (max-width: 768px) {
     .navbar {
         padding: 1rem 1rem;
-        flex-wrap: wrap; /* Permite que los elementos se envuelvan si es necesario */
-        /* Eliminamos flex-direction: row y align-items: center ya que ya es el valor predeterminado y es bueno */
+        flex-wrap: wrap;
     }
     .navbar-brand {
-        margin-bottom: 0; /* Asegura que no haya margen inferior extra */
+        font-size: 1.6rem;
+        margin-right: auto; /* Empuja el toggle a la derecha */
     }
     .navbar-links {
-        display: none; /* Oculta los enlaces de navegación tradicionales */
+        display: none;
     }
     .menu-toggle {
-        display: block; /* Muestra el botón de menú hamburguesa */
+        display: block;
     }
-    /* No es necesario redefinir .navbar-links-mobile .logout-button-navbar aquí,
-       ya que su definición general es adecuada y se aplica cuando se activa. */
 
     .cart-container {
-        margin: 2rem 1rem; /* Reduce los márgenes laterales en pantallas pequeñas */
-        padding: 1rem; /* Reduce el padding interno */
+        margin: 2rem 1rem;
+        padding: 1.5rem; /* Ajusta el padding interno */
     }
 
     .cart-title {
@@ -398,48 +419,48 @@ a {
     }
 
     .cart-table thead {
-        display: none; /* Oculta los encabezados de la tabla en pantallas pequeñas */
+        display: none;
     }
 
     .cart-table tr {
-        margin-bottom: 1.5rem; /* Aumenta un poco el espacio entre elementos del carrito */
+        margin-bottom: 1rem; /* Ajusta el espacio entre "tarjetas" */
         border: 1px solid var(--border-color);
         border-radius: 0.5rem;
         display: flex;
         flex-wrap: wrap;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.8rem; /* Añade padding a cada fila como si fuera una tarjeta */
+        justify-content: space-between; /* Distribuye elementos horizontalmente */
+        align-items: flex-start; /* Alinea al inicio de la "tarjeta" */
+        padding: 0.8rem;
     }
 
     .cart-table td {
-        border-bottom: none; /* Elimina los bordes inferiores entre celdas */
-        text-align: right; /* Alinea el valor a la derecha */
-        padding: 0.5rem 0.8rem; /* Ajusta el padding de las celdas */
+        border-bottom: none;
+        text-align: right;
+        padding: 0.5rem 0.5rem; /* Ajusta el padding de las celdas */
         position: relative;
         flex-basis: 48%; /* Dos columnas por fila */
     }
 
     .cart-table td:before {
         content: attr(data-label);
-        position: absolute; /* Para alinear el label a la izquierda de la celda */
-        left: 0.8rem;
+        position: absolute;
+        left: 0.5rem; /* Ajusta la posición del label */
         font-weight: 700;
         text-transform: uppercase;
         color: var(--text-light);
-        font-size: 0.75rem; /* Ajusta el tamaño de la fuente del label */
-        top: 0.5rem; /* Ajusta la posición vertical del label */
+        font-size: 0.7rem;
+        top: 0.5rem;
     }
 
-    /* Specific overrides for first column (product name/image) to take full width */
     .cart-table td:first-child {
         text-align: left;
-        flex-basis: 100%; /* Toma todo el ancho */
-        border-bottom: 1px solid var(--border-color); /* Retiene el borde inferior para separar la info del producto */
-        padding-bottom: 1rem;
-        display: flex; /* Para alinear imagen y nombre */
+        flex-basis: 100%;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.8rem;
+        margin-bottom: 0.5rem; /* Pequeño margen para separar de los otros datos */
+        display: flex;
         align-items: center;
-        padding-top: 0.5rem; /* Ajusta padding superior */
+        padding-top: 0.5rem;
     }
 
     .cart-table td:first-child:before {
@@ -449,36 +470,42 @@ a {
     .cart-item-image {
         width: 50px;
         height: 50px;
-        margin-right: 0.8rem; /* Aumenta un poco el espacio */
+        margin-right: 0.6rem;
+    }
+
+    .cart-item-name {
+        flex-grow: 1; /* Permite que el nombre ocupe el espacio restante */
+        word-wrap: break-word; /* Rompe palabras largas */
+        overflow-wrap: break-word; /* Asegura que palabras muy largas se rompan */
     }
 
     .quantity-controls {
         justify-content: flex-end; /* Alinea los controles de cantidad a la derecha */
-        width: 100%; /* Asegura que ocupe todo el ancho de su celda */
-        margin-top: 0.5rem; /* Espacio superior para separar del label */
+        width: 100%;
+        margin-top: 0.5rem;
         flex-basis: 100%; /* Asegura que ocupe una línea completa en la "tarjeta" */
     }
     .quantity-input {
-        width: 50px; /* Ajusta el ancho del input de cantidad */
+        width: 50px;
     }
-
 
     .remove-button {
         width: 100%; /* Ocupa todo el ancho disponible */
-        margin-top: 0.8rem; /* Espacio superior para separarlo de los controles de cantidad */
+        margin-top: 0.8rem;
         flex-basis: 100%; /* Asegura que ocupe una línea completa en la "tarjeta" */
+        align-self: flex-end; /* Alinea el botón eliminar a la derecha */
     }
 
     .cart-summary {
         font-size: 1.5rem;
-        text-align: center; /* Centra el total en móvil */
-        padding-top: 1rem; /* Reduce el padding superior */
+        text-align: center;
+        padding-top: 1rem;
     }
 
     #cart-total {
-        display: block; /* Muestra el total en su propia línea */
-        margin-left: 0; /* Elimina margen izquierdo */
-        margin-top: 0.5rem; /* Añade margen superior */
+        display: block;
+        margin-left: 0;
+        margin-top: 0.5rem;
     }
 
     .empty-cart-message {
@@ -489,30 +516,31 @@ a {
         padding: 1.5rem 1rem;
         border-top-left-radius: 1rem;
         border-top-right-radius: 1rem;
+        margin-top: 3rem; /* Ajusta el margen superior del footer en móvil */
     }
 
     .cart-actions {
         flex-direction: column; /* Apila los botones de acción */
-        align-items: stretch; /* Estira los botones para ocupar el ancho completo */
+        align-items: center; /* Centra los botones apilados */
         gap: 1rem; /* Reduce el espacio entre botones apilados */
     }
 
-    .continue-shopping-button,
-    .mercadopago-pay-button {
-        width: 100%; /* Asegura que los botones ocupen todo el ancho */
-        max-width: 300px; /* Opcional: limita el ancho máximo en pantallas muy grandes */
-        margin: 0 auto; /* Centra los botones apilados */
+    .cart-actions .continue-shopping-button,
+    .cart-actions .mercadopago-pay-button,
+    .cart-actions form {
+        width: 100%; /* Ocupan todo el ancho disponible */
+        max-width: 300px; /* Limita el ancho máximo para que no sean demasiado grandes */
+        margin: 0 auto; /* Centra individualmente */
     }
 }
 
 @media (max-width: 480px) {
-    /* Ajustes adicionales para pantallas muy pequeñas (ej. smartphones antiguos) */
     body {
-        font-size: 15px; /* Ligeramente más pequeña la fuente base */
+        font-size: 15px;
     }
 
     .navbar {
-        padding: 0.8rem 0.8rem; /* Más pequeño el padding del navbar */
+        padding: 0.8rem 0.8rem;
     }
 
     .navbar-brand {
@@ -527,7 +555,8 @@ a {
     .cart-table td {
         flex-basis: 100%; /* Cada celda toma su propia línea en pantallas muy pequeñas */
         text-align: left; /* Alinea el contenido a la izquierda */
-        padding: 0.5rem 0.8rem;
+        padding: 0.3rem 0; /* Reduce padding para un diseño más compacto */
+        position: static; /* Importante para que ::before se comporte como inline */
     }
 
     .cart-table td:before {
@@ -535,10 +564,18 @@ a {
         display: inline-block; /* Ocupa su propio espacio en la línea */
         margin-right: 0.5rem; /* Espacio entre el label y el valor */
         font-size: 0.7rem; /* Reduce aún más el tamaño del label */
+        color: var(--text-light); /* Asegura que el color sea consistente */
+        min-width: 60px; /* Puede ser útil para alinear labels */
     }
 
     .cart-table td:first-child {
         padding-bottom: 0.8rem;
+        border-bottom: 1px solid var(--border-color); /* Mantén el separador para el producto */
+        margin-bottom: 0.5rem;
+    }
+
+    .cart-table td:first-child:before {
+        content: none; /* Oculta el label para el nombre del producto */
     }
 
     .cart-item-image {
@@ -550,11 +587,11 @@ a {
     .quantity-controls {
         justify-content: flex-start; /* Alinea los controles de cantidad a la izquierda */
         flex-wrap: wrap; /* Permite que los botones y el input de cantidad se envuelvan */
-        gap: 0.2rem; /* Reduce el espacio entre elementos de cantidad */
+        gap: 0.2rem;
     }
     .quantity-input {
-        width: 40px; /* Ajusta el ancho del input de cantidad para muy pequeñas */
-        padding: 0.3rem; /* Reduce el padding del input */
+        width: 40px;
+        padding: 0.3rem;
     }
     .quantity-button {
         width: 25px;
@@ -566,6 +603,13 @@ a {
         margin-top: 0.5rem;
         padding: 0.4rem 0.8rem;
         font-size: 0.8rem;
+        align-self: flex-start; /* Alinea a la izquierda si flex-direction es column */
+    }
+    .cart-table td[data-label="Acción:"] {
+        padding-top: 0.5rem;
+        border-top: 1px dashed var(--border-color); /* Separador visual sutil */
+        margin-top: 0.5rem;
+        flex-basis: 100%;
     }
 
     .cart-summary {
@@ -575,12 +619,15 @@ a {
 
     .footer {
         padding: 1rem 0.8rem;
+        margin-top: 2rem; /* Reduce el margen superior del footer en pantallas muy pequeñas */
     }
 
-    .continue-shopping-button,
-    .mercadopago-pay-button {
-        padding: 0.6rem 1.5rem; /* Ajusta el padding de los botones de acción */
-        font-size: 0.9rem; /* Reduce el tamaño de la fuente de los botones de acción */
+    .cart-actions .continue-shopping-button,
+    .cart-actions .mercadopago-pay-button,
+    .cart-actions form {
+        padding: 0.6rem 1.5rem;
+        font-size: 0.9rem;
+        max-width: 260px; /* Un poco más reducido para móviles muy pequeños */
     }
 }
     </style>
