@@ -16,8 +16,7 @@ class MercadoPagoController extends Controller
         // === MODIFICACIÓN TEMPORAL PARA DEPURACIÓN: HARDCODEANDO EL ACCESS TOKEN ===
         // ¡RECUERDA ELIMINAR ESTA LÍNEA Y RESTAURAR LA ORIGINAL DESPUÉS DE DEPURAR!
         // =========================================================================
-        MercadoPagoConfig::setAccessToken("APP_USR-2819903673318377-060916-5b83c88e82ab9402fb136522f050898c-1522977531");
-
+MercadoPagoConfig::setAccessToken(config('services.mercadopago.access_token'));
         // Esta es la línea ORIGINAL y CORRECTA que DEBES RESTAURAR al finalizar la depuración:
         // MercadoPagoConfig::setAccessToken(config('services.mercadopago.access_token'));
     }
