@@ -11,10 +11,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
-    @vite(['resources/js/app.js'])
-
+    @vite(['resources/js/app.js'])     
+    
     <style>
-/* Variables CSS */
+
+        /* Variables CSS */
 :root {
     --primary-color: #007BFF;
     --primary-light: #66B2FF;
@@ -638,7 +639,7 @@ a {
         max-width: 250px;
     }
 }
-    </style>
+        </style>
 </head>
 <body>
     <nav class="navbar">
@@ -743,8 +744,8 @@ a {
             {{-- FORMULARIO PARA PAGAR CON MERCADO PAGO --}}
             <form action="{{ route('mercadopago.pay') }}" method="POST" id="mercadopago-checkout-form">
                 @csrf
-                {{-- Estos valores serán establecidos por JavaScript para asegurar que sean los correctos --}}
-                <input type="hidden" name="amount" id="mercadopago-amount" value="{{ $total }}">
+                {{-- CAMBIO CRÍTICO: Renombrado de 'amount' a 'total_amount' para que coincida con el controlador --}}
+                <input type="hidden" name="total_amount" id="mercadopago-amount" value="{{ $total }}">
                 <input type="hidden" name="description" id="mercadopago-description" value="Compra en Tienda JD">
                 {{-- ¡ATENCIÓN!: Si tienes un ID de orden creado en tu base de datos antes del pago, puedes pasarlo aquí: --}}
                 {{-- <input type="hidden" name="order_id" value="{{ $order->id }}"> --}}
