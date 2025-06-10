@@ -69,7 +69,7 @@ a {
     color: inherit;
 }
 
-/* Navbar Styles (copied from welcome.blade.php for consistency) */
+/* Navbar Styles */
 .navbar {
     background-color: var(--card-background);
     border-bottom: 1px solid var(--border-color);
@@ -79,7 +79,7 @@ a {
     justify-content: space-between;
     align-items: center;
     position: relative;
-    z-index: 1000; /* Asegura que el navbar esté por encima de otros elementos */
+    z-index: 1000;
     flex-shrink: 0; /* Evita que el navbar se encoja */
 }
 
@@ -90,7 +90,7 @@ a {
 }
 
 .menu-toggle {
-    display: none; /* Oculto por defecto en desktop */
+    display: none;
     font-size: 2rem;
     background: none;
     border: none;
@@ -107,21 +107,21 @@ a {
 }
 
 .navbar-links-mobile {
-    display: none; /* Oculto por defecto, se mostrará con JS */
+    display: none;
     flex-direction: column;
     background-color: var(--card-background);
     position: absolute;
-    top: 100%; /* Justo debajo del navbar */
+    top: 100%;
     left: 0;
     width: 100%;
     border-top: 1px solid var(--border-color);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-    z-index: 999; /* Ligeramente debajo del navbar principal */
+    z-index: 999;
     padding: 1rem 0;
 }
 
 .navbar-links-mobile.active {
-    display: flex; /* Se muestra cuando la clase 'active' está presente */
+    display: flex;
 }
 
 .navbar-links-mobile .navbar-link,
@@ -226,6 +226,8 @@ a {
 
 .cart-item-name {
     font-weight: 600;
+    word-wrap: break-word; /* Asegura que nombres largos se rompan */
+    overflow-wrap: break-word;
 }
 
 .quantity-controls {
@@ -315,14 +317,14 @@ a {
     align-items: center;
     margin-top: 2rem;
     flex-wrap: wrap;
-    gap: 1.5rem; /* Aumenta el espacio entre botones */
+    gap: 1.5rem; /* Espacio entre botones */
 }
 
 /* Asegura que los botones ocupen el mismo ancho posible */
 .cart-actions .continue-shopping-button,
 .cart-actions .mercadopago-pay-button,
-.cart-actions form { /* El formulario también debe ser flexible */
-    flex: 1; /* Permite que crezcan y compartan el espacio */
+.cart-actions form {
+    flex: 1;
     min-width: 250px; /* Tamaño mínimo para cada botón/formulario */
     max-width: 45%; /* Limita el ancho para que no se estiren demasiado en pantallas grandes */
     box-sizing: border-box; /* Incluye padding y border en el width */
@@ -335,7 +337,7 @@ a {
 
 .continue-shopping-button,
 .mercadopago-pay-button {
-    display: inline-block; /* Para mantener padding y transform */
+    display: inline-block;
     padding: 0.8rem 2rem;
     border-radius: 0.75rem;
     font-weight: 700;
@@ -357,7 +359,6 @@ a {
     transform: translateY(-2px);
 }
 
-/* Estilos específicos para el botón de Mercado Pago */
 .mercadopago-pay-button {
     background-color: var(--mercadopago-button-color);
     color: var(--mercadopago-text-color);
@@ -394,7 +395,7 @@ a {
     }
     .navbar-brand {
         font-size: 1.6rem;
-        margin-right: auto; /* Empuja el toggle a la derecha */
+        margin-right: auto;
     }
     .navbar-links {
         display: none;
@@ -405,7 +406,7 @@ a {
 
     .cart-container {
         margin: 2rem 1rem;
-        padding: 1.5rem; /* Ajusta el padding interno */
+        padding: 1.5rem;
     }
 
     .cart-title {
@@ -423,33 +424,35 @@ a {
     }
 
     .cart-table tr {
-        margin-bottom: 1rem; /* Ajusta el espacio entre "tarjetas" */
+        margin-bottom: 1rem;
         border: 1px solid var(--border-color);
         border-radius: 0.5rem;
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between; /* Distribuye elementos horizontalmente */
-        align-items: flex-start; /* Alinea al inicio de la "tarjeta" */
-        padding: 0.8rem;
+        /* display: flex; REMOVED to allow direct block stacking for better control */
+        flex-direction: column; /* Stacks items vertically inside the row */
+        align-items: flex-start; /* Aligns content to the left inside the "card" */
+        padding: 1rem; /* Generous padding for card feel */
     }
 
     .cart-table td {
         border-bottom: none;
-        text-align: right;
-        padding: 0.5rem 0.5rem; /* Ajusta el padding de las celdas */
+        text-align: left; /* Align all content to the left within the td */
+        padding: 0.5rem 0; /* Reduced padding for compact layout */
         position: relative;
-        flex-basis: 48%; /* Dos columnas por fila */
+        width: 100%; /* Each cell takes full width */
+        display: flex; /* Make td a flex container for label and value */
+        justify-content: space-between; /* Pushes label to left, value to right */
+        align-items: center; /* Vertically centers label and value */
     }
 
     .cart-table td:before {
         content: attr(data-label);
-        position: absolute;
-        left: 0.5rem; /* Ajusta la posición del label */
         font-weight: 700;
         text-transform: uppercase;
         color: var(--text-light);
-        font-size: 0.7rem;
-        top: 0.5rem;
+        font-size: 0.75rem;
+        min-width: 80px; /* Gives the label a minimum width for alignment */
+        flex-shrink: 0; /* Prevents label from shrinking */
+        margin-right: 0.5rem; /* Space between label and value */
     }
 
     .cart-table td:first-child {
@@ -457,43 +460,65 @@ a {
         flex-basis: 100%;
         border-bottom: 1px solid var(--border-color);
         padding-bottom: 0.8rem;
-        margin-bottom: 0.5rem; /* Pequeño margen para separar de los otros datos */
+        margin-bottom: 0.5rem;
         display: flex;
         align-items: center;
         padding-top: 0.5rem;
+        justify-content: flex-start; /* Ensure product image/name are left-aligned */
     }
 
     .cart-table td:first-child:before {
         content: ""; /* Oculta el label para el nombre del producto */
+        display: none; /* Ensure it's completely hidden */
     }
 
     .cart-item-image {
-        width: 50px;
-        height: 50px;
-        margin-right: 0.6rem;
+        width: 60px; /* Keep consistent size */
+        height: 60px;
+        margin-right: 1rem;
     }
 
     .cart-item-name {
-        flex-grow: 1; /* Permite que el nombre ocupe el espacio restante */
-        word-wrap: break-word; /* Rompe palabras largas */
-        overflow-wrap: break-word; /* Asegura que palabras muy largas se rompan */
+        flex-grow: 1;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
     }
 
     .quantity-controls {
-        justify-content: flex-end; /* Alinea los controles de cantidad a la derecha */
-        width: 100%;
+        justify-content: flex-start; /* Align controls to the left */
+        width: auto; /* Let content define width */
         margin-top: 0.5rem;
-        flex-basis: 100%; /* Asegura que ocupe una línea completa en la "tarjeta" */
+        flex-basis: auto; /* Let content define width */
+        flex-grow: 1; /* Allow to grow */
     }
+
     .quantity-input {
         width: 50px;
+        padding: 0.4rem;
+        font-size: 1rem;
+    }
+    .quantity-button {
+        width: 30px;
+        height: 30px;
+        font-size: 1.2rem;
     }
 
     .remove-button {
-        width: 100%; /* Ocupa todo el ancho disponible */
+        width: 100%; /* Occupy full width of its TD */
         margin-top: 0.8rem;
-        flex-basis: 100%; /* Asegura que ocupe una línea completa en la "tarjeta" */
-        align-self: flex-end; /* Alinea el botón eliminar a la derecha */
+        align-self: center; /* Center the button in its TD */
+        padding: 0.6rem 1rem; /* Slightly more padding for easier tap */
+        font-size: 0.95rem;
+    }
+    /* Specific styling for the action TD to ensure it behaves like a full row */
+    .cart-table td[data-label="Acción:"] {
+        border-top: 1px dashed var(--border-color); /* Add a dashed border for separation */
+        margin-top: 1rem; /* Space before the action section */
+        padding-top: 1rem; /* Padding above the action button */
+        justify-content: center; /* Center the button inside its own flex td */
+    }
+    .cart-table td[data-label="Acción:"]:before {
+        display: none; /* Hide label for action row */
     }
 
     .cart-summary {
@@ -516,27 +541,27 @@ a {
         padding: 1.5rem 1rem;
         border-top-left-radius: 1rem;
         border-top-right-radius: 1rem;
-        margin-top: 3rem; /* Ajusta el margen superior del footer en móvil */
+        margin-top: 3rem;
     }
 
     .cart-actions {
-        flex-direction: column; /* Apila los botones de acción */
-        align-items: center; /* Centra los botones apilados */
-        gap: 1rem; /* Reduce el espacio entre botones apilados */
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
     }
 
     .cart-actions .continue-shopping-button,
     .cart-actions .mercadopago-pay-button,
     .cart-actions form {
-        width: 100%; /* Ocupan todo el ancho disponible */
-        max-width: 300px; /* Limita el ancho máximo para que no sean demasiado grandes */
-        margin: 0 auto; /* Centra individualmente */
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto;
     }
 }
 
 @media (max-width: 480px) {
     body {
-        font-size: 15px;
+        font-size: 14px; /* Make base font slightly smaller for very small screens */
     }
 
     .navbar {
@@ -544,90 +569,78 @@ a {
     }
 
     .navbar-brand {
-        font-size: 1.5rem;
+        font-size: 1.4rem;
     }
 
     .cart-title {
-        font-size: 1.8rem;
-        margin-bottom: 1rem;
+        font-size: 1.6rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .cart-table tr {
+        padding: 0.8rem; /* Slightly less padding for very small cards */
     }
 
     .cart-table td {
-        flex-basis: 100%; /* Cada celda toma su propia línea en pantallas muy pequeñas */
-        text-align: left; /* Alinea el contenido a la izquierda */
-        padding: 0.3rem 0; /* Reduce padding para un diseño más compacto */
-        position: static; /* Importante para que ::before se comporte como inline */
+        padding: 0.4rem 0; /* Further reduce padding */
     }
 
     .cart-table td:before {
-        position: static; /* Coloca el label antes del contenido */
-        display: inline-block; /* Ocupa su propio espacio en la línea */
-        margin-right: 0.5rem; /* Espacio entre el label y el valor */
-        font-size: 0.7rem; /* Reduce aún más el tamaño del label */
-        color: var(--text-light); /* Asegura que el color sea consistente */
-        min-width: 60px; /* Puede ser útil para alinear labels */
+        font-size: 0.7rem; /* Smaller label font */
+        min-width: 65px; /* Adjust min-width for labels */
     }
 
     .cart-table td:first-child {
-        padding-bottom: 0.8rem;
-        border-bottom: 1px solid var(--border-color); /* Mantén el separador para el producto */
-        margin-bottom: 0.5rem;
-    }
-
-    .cart-table td:first-child:before {
-        content: none; /* Oculta el label para el nombre del producto */
+        padding-bottom: 0.6rem;
+        margin-bottom: 0.4rem;
     }
 
     .cart-item-image {
-        width: 45px;
-        height: 45px;
-        margin-right: 0.5rem;
+        width: 50px;
+        height: 50px;
+        margin-right: 0.8rem;
     }
 
     .quantity-controls {
-        justify-content: flex-start; /* Alinea los controles de cantidad a la izquierda */
-        flex-wrap: wrap; /* Permite que los botones y el input de cantidad se envuelvan */
-        gap: 0.2rem;
+        gap: 0.3rem; /* Reduce gap between quantity elements */
     }
     .quantity-input {
-        width: 40px;
-        padding: 0.3rem;
+        width: 45px;
+        padding: 0.25rem;
+        font-size: 0.9rem;
     }
     .quantity-button {
-        width: 25px;
-        height: 25px;
-        font-size: 1rem;
+        width: 28px;
+        height: 28px;
+        font-size: 1.1rem;
     }
 
     .remove-button {
-        margin-top: 0.5rem;
-        padding: 0.4rem 0.8rem;
-        font-size: 0.8rem;
-        align-self: flex-start; /* Alinea a la izquierda si flex-direction es column */
+        padding: 0.5rem 0.8rem;
+        font-size: 0.85rem;
     }
+
     .cart-table td[data-label="Acción:"] {
-        padding-top: 0.5rem;
-        border-top: 1px dashed var(--border-color); /* Separador visual sutil */
-        margin-top: 0.5rem;
-        flex-basis: 100%;
+        margin-top: 0.8rem;
+        padding-top: 0.8rem;
     }
 
     .cart-summary {
-        font-size: 1.3rem;
-        padding-top: 1rem;
+        font-size: 1.2rem;
+        padding-top: 0.8rem;
     }
 
     .footer {
         padding: 1rem 0.8rem;
-        margin-top: 2rem; /* Reduce el margen superior del footer en pantallas muy pequeñas */
+        margin-top: 2rem;
     }
 
     .cart-actions .continue-shopping-button,
     .cart-actions .mercadopago-pay-button,
     .cart-actions form {
-        padding: 0.6rem 1.5rem;
+        padding: 0.6rem 1.2rem;
         font-size: 0.9rem;
-        max-width: 260px; /* Un poco más reducido para móviles muy pequeños */
+        max-width: 250px; /* Slightly more constrained for very small screens */
     }
 }
     </style>
