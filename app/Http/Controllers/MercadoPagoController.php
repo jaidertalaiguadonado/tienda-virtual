@@ -1,14 +1,12 @@
 <?php
 
-
-
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use MercadoPago\Client\Preference\PreferenceClient; // Nuevo SDK de Mercado Pago
-use MercadoPago\MercadoPagoConfig;                 // Clase de configuración del SDK
-use MercadoPago\Client\Payment\PaymentClient;      // Para manejar webhooks
-use Illuminate\Support\Str;                        // Si lo usas para generar referencias
+use MercadoPago\Client\Preference\PreferenceClient;
+use MercadoPago\MercadoPagoConfig;
+use MercadoPago\Client\Payment\PaymentClient;
+use Illuminate\Support\Str;
 
 class MercadoPagoController extends Controller
 {
@@ -21,16 +19,12 @@ class MercadoPagoController extends Controller
         // Obtiene el access token de la configuración de Laravel (config/services.php)
         $accessToken = config('services.mercadopago.access_token');
 
-        // **IMPORTANTE**: Quita cualquier dd() o hardcodeo que hayas puesto aquí para depurar.
-        // Si $accessToken aún es null aquí, el problema está en .env o config/services.php,
-        // o no se ha limpiado la caché de Laravel.
-
         // Establece el access token para Mercado Pago SDK
         if (empty($accessToken)) {
-            // Esto es una medida de seguridad, en producción deberías tener un token válido.
-            // Para depuración, puedes lanzar una excepción o loggear un error crítico.
-            \Log::error('Mercado Pago Access Token no configurado o es nulo. Verifique .env y config/services.php');
-            // Opcional: throw new \Exception('Mercado Pago Access Token no configurado.');
+            // Esto es una medida de seguridad crítica. En producción, un token nulo debería ser un error fatal.
+            \Log::critical('Mercado Pago Access Token no configurado o es nulo. Verifique .env y config/services.php');
+            // Opcional: Si quieres que la aplicación falle ruidosamente en desarrollo si no hay token:
+            // throw new \Exception('Mercado Pago Access Token no configurado. Por favor, verifique su archivo .env y config/services.php');
         } else {
             MercadoPagoConfig::setAccessToken($accessToken);
         }
