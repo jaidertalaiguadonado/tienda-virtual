@@ -1,46 +1,68 @@
 <?php
 
+
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use MercadoPago\Client\Preference\PreferenceClient;
-use MercadoPago\MercadoPagoConfig;
-use MercadoPago\Client\Payment\PaymentClient;
-use Illuminate\Support\Str;
+use MercadoPago\Client\Preference\PreferenceClient; // Nuevo SDK de Mercado Pago
+use MercadoPago\MercadoPagoConfig;                 // Clase de configuración del SDK
+use MercadoPago\Client\Payment\PaymentClient;      // Para manejar webhooks
+use Illuminate\Support\Str;                        // Si lo usas para generar referencias
 
 class MercadoPagoController extends Controller
 {
+    /**
+     * Constructor para inicializar el SDK de Mercado Pago.
+     * El access token se obtiene de la configuración de servicios.
+     */
     public function __construct()
     {
-        // =========================================================================
-        // === MODIFICACIÓN TEMPORAL PARA DEPURACIÓN: HARDCODEANDO EL ACCESS TOKEN ===
-        // ¡RECUERDA ELIMINAR ESTA LÍNEA Y RESTAURAR LA ORIGINAL DESPUÉS DE DEPURAR!
-        // =========================================================================
-MercadoPagoConfig::setAccessToken(config('services.mercadopago.access_token'));
-        // Esta es la línea ORIGINAL y CORRECTA que DEBES RESTAURAR al finalizar la depuración:
-        // MercadoPagoConfig::setAccessToken(config('services.mercadopago.access_token'));
+        // Obtiene el access token de la configuración de Laravel (config/services.php)
+        $accessToken = config('services.mercadopago.access_token');
+
+        // **IMPORTANTE**: Quita cualquier dd() o hardcodeo que hayas puesto aquí para depurar.
+        // Si $accessToken aún es null aquí, el problema está en .env o config/services.php,
+        // o no se ha limpiado la caché de Laravel.
+
+        // Establece el access token para Mercado Pago SDK
+        if (empty($accessToken)) {
+            // Esto es una medida de seguridad, en producción deberías tener un token válido.
+            // Para depuración, puedes lanzar una excepción o loggear un error crítico.
+            \Log::error('Mercado Pago Access Token no configurado o es nulo. Verifique .env y config/services.php');
+            // Opcional: throw new \Exception('Mercado Pago Access Token no configurado.');
+        } else {
+            MercadoPagoConfig::setAccessToken($accessToken);
+        }
     }
 
+    /**
+     * Crea una preferencia de pago en Mercado Pago.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function createPaymentPreference(Request $request)
     {
+        // Validación de los datos de entrada
         $request->validate([
-            'amount' => 'required|numeric|min:1',
+            'total_amount' => 'required|numeric|min:1', // Asumo 'total_amount' de la vista del carrito
             'description' => 'required|string|max:255',
         ]);
 
-        $amount = $request->input('amount');
+        $amount = $request->input('total_amount');
         $description = $request->input('description');
-        $externalReference = 'ORDER-' . uniqid();
+        $externalReference = 'ORDER-' . uniqid(); // Genera una referencia única para tu orden
 
-        $preference = new PreferenceClient();
+        $preferenceClient = new PreferenceClient(); // Instancia del cliente de preferencias
         try {
-            $response = $preference->create([
+            $response = $preferenceClient->create([
                 "items" => [
                     [
                         "title" => $description,
                         "quantity" => 1,
                         "unit_price" => (float) $amount,
-                        "currency_id" => "COP" // Asegúrate que esta sea la moneda correcta
+                        "currency_id" => "COP" // ¡Asegúrate que esta sea la moneda correcta! (COP para Colombia)
                     ]
                 ],
                 "back_urls" => [
@@ -48,15 +70,19 @@ MercadoPagoConfig::setAccessToken(config('services.mercadopago.access_token'));
                     "failure" => route('mercadopago.failure'),
                     "pending" => route('mercadopago.pending')
                 ],
-                "auto_return" => "approved",
-                "notification_url" => route('mercadopago.webhook') . '?source_news=webhooks',
-                "external_reference" => $externalReference,
+                "auto_return" => "approved", // Redirige automáticamente al usuario al éxito
+                // notification_url debe ser accesible públicamente por Mercado Pago
+                // y no debe tener redirecciones.
+                "notification_url" => route('mercadopago.webhook') . '?source_news=webhooks', // Añade parámetro para identificar webhooks
+                "external_reference" => $externalReference, // Pasa la referencia de tu orden
                 "statement_descriptor" => "TIENDAJD", // Reemplaza con un descriptor corto para el extracto de tarjeta
             ]);
 
-            return redirect($response->init_point);
+            // Redirige al usuario al init_point de Mercado Pago para completar el pago
+            return redirect()->away($response->init_point);
 
         } catch (\MercadoPago\Exceptions\MPApiException $e) {
+            // Manejo de errores específicos de la API de Mercado Pago
             $apiResponse = $e->getApiResponse();
             $errorMessage = $e->getMessage();
             $errorDetails = [];
@@ -83,32 +109,61 @@ MercadoPagoConfig::setAccessToken(config('services.mercadopago.access_token'));
             return back()->with('error', $userMessage);
 
         } catch (\Exception $e) {
+            // Manejo de errores generales (conexión, etc.)
             \Log::error('Error general al crear preferencia de pago: ' . $e->getMessage());
             return back()->with('error', 'Error interno al procesar el pago. Por favor, intenta de nuevo.');
         }
     }
 
+    /**
+     * Maneja la redirección cuando el pago es exitoso.
+     *
+     * @param Request $request
+     * @return \Illuminate\View\View
+     */
     public function paymentSuccess(Request $request)
     {
         $paymentId = $request->query('payment_id');
         $externalReference = $request->query('external_reference');
+        // Aquí podrías validar el paymentId y actualizar el estado de tu orden.
+        \Log::info('Mercado Pago Success Callback:', $request->all());
         return view('mercadopago.success', compact('paymentId', 'externalReference'))->with('message', '¡Gracias por tu compra! Tu pago ha sido recibido y está siendo procesado.');
     }
 
+    /**
+     * Maneja la redirección cuando el pago falla.
+     *
+     * @param Request $request
+     * @return \Illuminate\View\View
+     */
     public function paymentFailure(Request $request)
     {
         $paymentId = $request->query('payment_id');
         $externalReference = $request->query('external_reference');
+        \Log::info('Mercado Pago Failure Callback:', $request->all());
         return view('mercadopago.failure', compact('paymentId', 'externalReference'))->with('message', 'Lo sentimos, tu pago no pudo ser procesado. Por favor, inténtalo de nuevo.');
     }
 
+    /**
+     * Maneja la redirección cuando el pago está pendiente.
+     *
+     * @param Request $request
+     * @return \Illuminate\View\View
+     */
     public function paymentPending(Request $request)
     {
         $paymentId = $request->query('payment_id');
         $externalReference = $request->query('external_reference');
+        \Log::info('Mercado Pago Pending Callback:', $request->all());
         return view('mercadopago.pending', compact('paymentId', 'externalReference'))->with('message', 'Tu pago está pendiente de confirmación. Te notificaremos cuando se apruebe.');
     }
 
+    /**
+     * Maneja las notificaciones de webhook de Mercado Pago.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function handleWebhook(Request $request)
     {
         $topic = $request->input('topic');
@@ -116,25 +171,35 @@ MercadoPagoConfig::setAccessToken(config('services.mercadopago.access_token'));
 
         \Log::info('Webhook de Mercado Pago recibido:', $request->all());
 
+        // Es crucial que devuelvas un 200 OK a Mercado Pago rápidamente
+        // antes de hacer lógica pesada. Si tu lógica es compleja, considera usar colas.
+
         if ($topic === 'payment') {
             try {
                 $paymentClient = new PaymentClient();
-                $payment = $paymentClient->get($id);
+                $payment = $paymentClient->get($id); // Consulta la API de MP para obtener detalles del pago
 
                 if ($payment) {
                     $paymentId = $payment->id;
-                    $paymentStatus = $payment->status;
+                    $paymentStatus = $payment->status; // 'approved', 'pending', 'rejected', etc.
                     $externalReference = $payment->external_reference;
 
                     \Log::info("Webhook: Procesando pago MP ID: {$paymentId}, Estado: {$paymentStatus}, Ref Externa: {$externalReference}");
 
-                    // ... (Tu lógica para actualizar la orden, guardar el pago, etc.) ...
-                    // Por ejemplo:
+                    // =========================================================================
+                    // === TU LÓGICA CRÍTICA PARA ACTUALIZAR EL ESTADO DE LA ORDEN AQUÍ ===
+                    // =========================================================================
+                    // Ejemplo (descomenta y adapta):
                     // $order = Order::where('external_reference', $externalReference)->first();
                     // if ($order) {
                     //     $order->mp_payment_id = $paymentId;
-                    //     $order->status = $this->mapMercadoPagoStatusToOrderStatus($paymentStatus);
+                    //     $order->status = $this->mapMercadoPagoStatusToOrderStatus($paymentStatus); // Mapea el estado de MP a tus estados internos
                     //     $order->save();
+                    //     \Log::info("Orden {$order->id} actualizada a estado: {$order->status}");
+
+                    //     // Opcional: Enviar email de confirmación al cliente, despachar producto, etc.
+                    // } else {
+                    //     \Log::warning("Webhook: Orden no encontrada para referencia externa: {$externalReference}");
                     // }
 
                 } else {
@@ -156,10 +221,17 @@ MercadoPagoConfig::setAccessToken(config('services.mercadopago.access_token'));
                 \Log::error('Error general en Webhook al procesar: ' . $e->getMessage());
             }
         }
+        // Siempre devuelve un 200 OK a Mercado Pago para indicar que la notificación fue recibida.
         return response()->json(['status' => 'ok'], 200);
     }
 
-    // Opcional: una función para mapear los estados de MP a tus estados de orden internos
+    /**
+     * Mapea los estados de pago de Mercado Pago a tus estados internos de orden.
+     * (Ejemplo, puedes adaptar esto a tus necesidades)
+     *
+     * @param string $mpStatus
+     * @return string
+     */
     // private function mapMercadoPagoStatusToOrderStatus(string $mpStatus): string
     // {
     //     switch ($mpStatus) {
@@ -168,8 +240,13 @@ MercadoPagoConfig::setAccessToken(config('services.mercadopago.access_token'));
     //         case 'pending':
     //             return 'pending_payment';
     //         case 'rejected':
+    //         case 'cancelled':
     //             return 'cancelled';
-    //         // Agrega más estados según sea necesario
+    //         case 'refunded':
+    //             return 'refunded';
+    //         case 'charged_back':
+    //             return 'charged_back';
+    //         // Agrega más estados según sean relevantes para tu flujo
     //         default:
     //             return 'unknown';
     //     }

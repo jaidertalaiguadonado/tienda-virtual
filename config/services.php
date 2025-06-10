@@ -2,11 +2,19 @@
 
 return [
 
-'mercadopago' => [
-    'access_token' => env('MERCADOPAGO_ACCESS_TOKEN'), // LEE DIRECTO
-    'public_key' => env('MERCADOPAGO_PUBLIC_KEY'),     // LEE DIRECTO
-    'env' => env('MERCADOPAGO_ENV', 'sandbox'), // Esto aún se lee para otras lógicas
-],
+    'mercadopago' => [
+        // Aquí decidimos qué access_token usar basado en MERCADOPAGO_ENV
+        'access_token' => env('MERCADOPAGO_ENV') === 'production'
+            ? env('MERCADOPAGO_ACCESS_TOKEN_PROD')
+            : env('MERCADOPAGO_ACCESS_TOKEN_SANDBOX'),
+
+        // Aquí decidimos qué public_key usar basado en MERCADOPAGO_ENV
+        'public_key' => env('MERCADOPAGO_ENV') === 'production'
+            ? env('MERCADOPAGO_PUBLIC_KEY_PROD')
+            : env('MERCADOPAGO_PUBLIC_KEY_SANDBOX'),
+
+        'env' => env('MERCADOPAGO_ENV', 'sandbox'), // Esto aún se lee para otras lógicas
+    ],
 
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
