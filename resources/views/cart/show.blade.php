@@ -615,6 +615,7 @@ a {
         padding: 0.5rem 0.8rem;
         font-size: 0.85rem;
     }
+    /*solucion pcp */
 
     .cart-table td[data-label="Acción:"] {
         margin-top: 0.8rem;
