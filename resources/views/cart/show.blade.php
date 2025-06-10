@@ -347,19 +347,9 @@ a {
     cursor: pointer;
 }
 
-.continue-shopping-button {
-    background-color: var(--secondary-color);
-    color: var(--button-text);
-}
-
 .continue-shopping-button:hover {
     background-color: #138D9E;
     transform: translateY(-2px);
-}
-
-.mercadopago-pay-button {
-    background-color: var(--mercadopago-button-color);
-    color: var(--mercadopago-text-color);
 }
 
 .mercadopago-pay-button:hover {
@@ -404,7 +394,8 @@ a {
 
     .cart-container {
         margin: 2rem 1rem;
-        padding: 1.5rem;
+        /* --- MODIFIED --- */
+        padding: 1.5rem; /* Base padding for the container */
     }
 
     .cart-title {
@@ -427,20 +418,23 @@ a {
         border-radius: 0.5rem;
         flex-direction: column;
         align-items: flex-start;
-        padding: 1rem;
+        /* --- MODIFIED --- */
+        padding: 1rem; /* Padding for each product card */
+        box-sizing: border-box; /* Crucial to include padding in width calculation */
     }
 
     .cart-table td {
         border-bottom: none;
         text-align: left;
-        padding: 0.5rem 0;
+        /* --- MODIFIED --- */
+        padding: 0.4rem 0; /* Vertical padding, no horizontal padding here */
         position: relative;
         width: 100%;
         display: flex;
-        /* --- MODIFIED --- */
-        justify-content: flex-start; /* Align contents to the start (left) */
+        justify-content: flex-start;
         align-items: center;
-        gap: 0.5rem; /* Gap between label and value */
+        gap: 0.5rem;
+        box-sizing: border-box; /* Crucial to include padding in width calculation */
     }
 
     .cart-table td:before {
@@ -449,9 +443,8 @@ a {
         text-transform: uppercase;
         color: var(--text-light);
         font-size: 0.75rem;
-        min-width: 80px; /* Consistent width for labels */
+        min-width: 80px;
         flex-shrink: 0;
-        /* --- REMOVED: margin-right from here to use gap in td --- */
     }
 
     .cart-table td:first-child {
@@ -464,7 +457,7 @@ a {
         align-items: center;
         padding-top: 0.5rem;
         justify-content: flex-start;
-        gap: 0; /* No gap for product name/image row */
+        gap: 0;
     }
 
     .cart-table td:first-child:before {
@@ -475,7 +468,7 @@ a {
     .cart-item-image {
         width: 60px;
         height: 60px;
-        margin-right: 1rem; /* Maintain separation from product name */
+        margin-right: 1rem;
     }
 
     .cart-item-name {
@@ -514,7 +507,7 @@ a {
         border-top: 1px dashed var(--border-color);
         margin-top: 1rem;
         padding-top: 1rem;
-        justify-content: center; /* Center the button inside its own flex td */
+        justify-content: center;
     }
     .cart-table td[data-label="Acción:"]:before {
         display: none;
@@ -577,18 +570,19 @@ a {
     }
 
     .cart-table tr {
-        padding: 0.8rem;
+        /* --- MODIFIED --- */
+        padding: 0.8rem; /* Consistent padding for the card */
     }
 
     .cart-table td {
-        padding: 0.4rem 0;
         /* --- MODIFIED --- */
-        gap: 0.3rem; /* Smaller gap for very small screens */
+        padding: 0.3rem 0; /* Vertical padding, no horizontal padding here */
+        gap: 0.3rem;
     }
 
     .cart-table td:before {
         font-size: 0.7rem;
-        min-width: 65px; /* Adjust min-width for labels on very small screens */
+        min-width: 65px;
     }
 
     .cart-table td:first-child {
@@ -597,13 +591,13 @@ a {
     }
 
     .cart-item-image {
-        width: 45px; /* Smaller image on very small screens */
+        width: 45px;
         height: 45px;
         margin-right: 0.8rem;
     }
 
     .quantity-controls {
-        gap: 0.2rem; /* Even smaller gap between quantity elements */
+        gap: 0.2rem;
     }
     .quantity-input {
         width: 40px;
@@ -611,7 +605,7 @@ a {
         font-size: 0.9rem;
     }
     .quantity-button {
-        width: 28px; /* Slightly smaller buttons */
+        width: 28px;
         height: 28px;
         font-size: 1.1rem;
     }
