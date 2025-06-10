@@ -9,8 +9,9 @@ use App\Http\Controllers\CartController;
 use Illuminate\Support\Facades\Route;
 use App\Models\Product;
 use App\Http\Controllers\MercadoPagoController;
-use App\Http\Controllers\HomeController; // ¡NUEVA IMPORTACIÓN: para el home de usuarios logueados!
-use Illuminate\Support\Facades\Auth; // Necesario si usas Auth::check() o Auth::user() directamente en rutas
+use App\Http\Controllers\HomeController;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\UserController; // ¡NUEVA IMPORTACIÓN: Necesitas un controlador para manejar la lógica de guardar la ubicación!
 
 
 /*
@@ -73,6 +74,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // ¡¡¡AQUÍ ES DONDE DEBES AGREGAR LA RUTA PARA GUARDAR LA UBICACIÓN!!!
+    // Asegúrate de que tu HomeController o un nuevo UserController tenga un método para manejar esto.
+    // He importado 'App\Http\Controllers\UserController;' arriba.
+    Route::post('/user/save-location', [UserController::class, 'saveLocation'])->name('user.save_location');
 
 }); // Fin del grupo de rutas protegidas por 'auth'
 
