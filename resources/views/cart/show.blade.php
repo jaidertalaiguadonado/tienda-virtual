@@ -1,310 +1,632 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carrito de Compras</title>
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <title>{{ config('app.name', 'Tienda JD') }} - Carrito</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+    @vite(['resources/js/app.js'])
+
     <style>
-        /* Estilos básicos para que los elementos sean visibles, ajusta según tu CSS */
+        /* Variables CSS */
+        :root {
+            --primary-color: #007BFF;
+            --primary-light: #66B2FF;
+            --secondary-color: #17A2B8;
+            --text-dark: #212529;
+            --text-light: #6C757D;
+            --background-light: #F8F9FA;
+            --card-background: #ffffff;
+            --border-color: #DEE2E6;
+            --button-text: #ffffff;
+            --logout-color: #DC3545;
+            --logout-light: #E65F6C;
+            --stock-available: #28A745;
+            --stock-unavailable: #DC3545;
+            --remove-button-color: #DC3545;
+            --remove-button-hover: #E65F6C;
+            --quantity-button-color: #007BFF;
+            --quantity-button-hover: #66B2FF;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --info-color: #17a2b8;
+
+            /* Nuevas variables para el botón de Mercado Pago */
+            --mercadopago-button-color: #009EE3; /* Azul de Mercado Pago */
+            --mercadopago-button-hover: #008ACD;
+            --mercadopago-text-color: #ffffff;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Open Sans', sans-serif;
+            background-color: var(--background-light);
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            line-height: 1.6;
+            color: var(--text-dark);
+            font-size: 16px;
         }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* Navbar Styles (copied from welcome.blade.php for consistency) */
         .navbar {
-            background-color: #333;
-            color: white;
-            padding: 1rem;
+            background-color: var(--card-background);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.2rem 2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: relative;
         }
-        .navbar-links {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            display: flex;
+
+        .navbar-brand {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary-color);
         }
-        .navbar-links li a {
-            color: white;
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-        }
+
         .menu-toggle {
-            display: none; /* Ocultar en desktop */
-            font-size: 1.5rem;
+            display: none;
+            font-size: 2rem;
+            background: none;
+            border: none;
+            color: var(--text-dark);
             cursor: pointer;
+            padding: 0;
+            line-height: 1;
         }
+
+        .navbar-links {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
         .navbar-links-mobile {
-            display: none; /* Ocultar por defecto */
+            display: none;
             flex-direction: column;
-            background-color: #444;
+            background-color: var(--card-background);
             position: absolute;
-            top: 60px; /* Ajusta según la altura de tu navbar */
+            top: 100%;
             left: 0;
             width: 100%;
+            border-top: 1px solid var(--border-color);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
             z-index: 1000;
+            padding: 1rem 0;
         }
+
         .navbar-links-mobile.active {
             display: flex;
         }
-        .navbar-links-mobile li a {
-            padding: 1rem;
-            border-bottom: 1px solid #555;
+
+        .navbar-links-mobile .navbar-link,
+        .navbar-links-mobile .logout-button-navbar {
+            padding: 0.8rem 2rem;
+            text-align: center;
+            width: auto;
+            margin: 0.2rem 1rem;
+        }
+
+        .navbar-links-mobile .logout-button-navbar {
+            width: calc(100% - 2rem);
+        }
+
+        .navbar-link {
+            color: var(--text-dark);
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .navbar-link:hover {
+            color: var(--primary-color);
+        }
+
+        .logout-button-navbar {
+            background-color: var(--logout-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .logout-button-navbar:hover {
+            background-color: var(--logout-light);
+            transform: translateY(-1px);
+        }
+
+        .logout-button-navbar:focus {
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.4);
+        }
+
+        /* Cart Specific Styles */
+        .cart-container {
+            max-width: 1000px;
+            margin: 3rem auto;
+            padding: 2rem;
+            background-color: var(--card-background);
+            border-radius: 1rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            /* text-align: center; REMOVED, controlled by individual elements now */
+        }
+
+        .cart-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            margin-bottom: 2.5rem;
             text-align: center;
         }
-        .cart-icon {
-            position: relative;
-            margin-left: 20px;
-        }
-        .cart-icon span {
-            background-color: red;
-            color: white;
-            border-radius: 50%;
-            padding: 2px 6px;
-            font-size: 0.8rem;
-            position: absolute;
-            top: -5px;
-            right: -10px;
-        }
-        .cart-container {
-            max-width: 900px;
-            margin: 2rem auto;
-            padding: 2rem;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
+
         .cart-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 1rem;
-        }
-        .cart-table th, .cart-table td {
-            border: 1px solid #ddd;
-            padding: 12px;
+            margin-bottom: 2rem;
             text-align: left;
         }
+
+        .cart-table th, .cart-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
         .cart-table th {
-            background-color: #f2f2f2;
+            background-color: var(--background-light);
+            font-weight: 700;
+            color: var(--text-dark);
+            text-transform: uppercase;
+            font-size: 0.9rem;
         }
-        .cart-table img {
-            max-width: 80px;
-            height: auto;
-            border-radius: 4px;
+
+        .cart-table td {
+            font-size: 1rem;
+            color: var(--text-dark);
         }
+
+        .cart-item-image {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            border-radius: 0.5rem;
+            vertical-align: middle;
+            margin-right: 1rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .cart-item-name {
+            font-weight: 600;
+        }
+
         .quantity-controls {
             display: flex;
             align-items: center;
+            gap: 0.5rem;
         }
-        .quantity-controls button {
-            background-color: #007bff;
-            color: white;
+
+        .quantity-button {
+            background-color: var(--primary-color);
+            color: var(--button-text);
             border: none;
-            padding: 5px 10px;
+            border-radius: 0.3rem;
+            width: 30px;
+            height: 30px;
+            font-size: 1.2rem;
+            font-weight: 700;
             cursor: pointer;
-            border-radius: 4px;
-            margin: 0 5px;
+            transition: background-color 0.2s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-        .quantity-controls button:hover {
-            opacity: 0.9;
+
+        .quantity-button:hover {
+            background-color: var(--primary-light);
         }
+
+        .quantity-button:disabled {
+            background-color: var(--text-light);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
         .quantity-input {
-            width: 50px;
+            width: 60px;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.3rem;
             text-align: center;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 5px;
+            font-size: 1rem;
         }
+
         .remove-button {
-            background-color: #dc3545;
-            color: white;
+            background-color: var(--remove-button-color);
+            color: var(--button-text);
             border: none;
-            padding: 8px 12px;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
             cursor: pointer;
-            border-radius: 4px;
+            transition: background-color 0.2s ease, transform 0.2s ease;
         }
+
         .remove-button:hover {
-            opacity: 0.9;
+            background-color: var(--remove-button-hover);
+            transform: translateY(-1px);
         }
+
         .cart-summary {
-            margin-top: 2rem;
             text-align: right;
-            border-top: 1px solid #eee;
-            padding-top: 1rem;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid var(--border-color);
         }
-        .cart-summary p {
-            font-size: 1.2rem;
-            font-weight: bold;
+
+        #cart-total {
+            color: var(--primary-color);
+            margin-left: 1rem;
         }
+
         .empty-cart-message {
-            text-align: center;
-            font-size: 1.2rem;
-            color: #777;
-            margin-top: 50px;
-            display: none; /* Hidden by default, JS controls visibility */
+            font-size: 1.5rem;
+            color: var(--text-light);
+            margin-top: 3rem;
+            margin-bottom: 3rem;
+            text-align: center; /* Center the message */
         }
+
         .cart-actions {
             display: flex;
-            justify-content: space-between;
+            justify-content: space-between; /* Espacio entre botones */
+            align-items: center;
             margin-top: 2rem;
+            flex-wrap: wrap; /* Permite que los botones se envuelvan en pantallas pequeñas */
+            gap: 1.5rem; /* Espacio entre los botones cuando se envuelven */
         }
-        .cart-actions a, .cart-actions button {
-            padding: 10px 20px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: bold;
+
+
+        .continue-shopping-button,
+        .mercadopago-pay-button { /* Aplica estilos similares a ambos botones */
+            display: inline-block;
+            padding: 0.8rem 2rem;
+            border-radius: 0.75rem;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            border: none; /* Asegurar que no haya bordes predeterminados */
             cursor: pointer;
-            transition: background-color 0.3s ease;
         }
-        .continue-shopping {
-            background-color: #6c757d;
-            color: white;
-            border: none;
+
+        .continue-shopping-button {
+            background-color: var(--secondary-color);
+            color: var(--button-text);
         }
-        .continue-shopping:hover {
-            background-color: #5a6268;
+
+        .continue-shopping-button:hover {
+            background-color: #138D9E;
+            transform: translateY(-2px);
         }
-        .checkout-button {
-            background-color: #28a745;
-            color: white;
-            border: none;
+
+        /* Estilos específicos para el botón de Mercado Pago */
+        .mercadopago-pay-button {
+            background-color: var(--mercadopago-button-color);
+            color: var(--mercadopago-text-color);
         }
-        .checkout-button:hover {
-            background-color: #218838;
+
+        .mercadopago-pay-button:hover {
+            background-color: var(--mercadopago-button-hover);
+            transform: translateY(-2px);
         }
-        /* Media Queries para responsividad */
+
+
+        /* Footer Styles (copied from welcome.blade.php for consistency) */
+        .footer {
+            background-color: var(--primary-color);
+            color: var(--button-text);
+            padding: 1.5rem 2rem;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top-left-radius: 2rem;
+            border-top-right-radius: 2rem;
+            margin-top: 4rem; /* Add some space above the footer */
+        }
+
+        .footer p {
+            margin: 0;
+            opacity: 0.8;
+        }
+
+        /* Responsive Adjustments (copied from welcome.blade.php for consistency) */
         @media (max-width: 768px) {
+            .navbar {
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                padding: 1rem 1rem;
+                flex-wrap: wrap;
+            }
+            .navbar-brand {
+                margin-bottom: 0;
+            }
             .navbar-links {
                 display: none;
             }
             .menu-toggle {
                 display: block;
             }
-            .cart-table, .cart-summary {
-                padding: 0 1rem;
+            .navbar-links-mobile .logout-button-navbar {
+                width: calc(100% - 2rem);
             }
-            .cart-table th, .cart-table td {
-                padding: 8px;
-                font-size: 0.9rem;
+
+            .cart-container {
+                margin: 2rem 1rem;
+                padding: 1rem;
             }
+
+            .cart-title {
+                font-size: 2rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .cart-table, .cart-table tbody, .cart-table tr, .cart-table td, .cart-table th {
+                display: block;
+                width: 100%;
+            }
+
             .cart-table thead {
-                display: none; /* Ocultar encabezado en móvil */
+                display: none; /* Hide table headers on small screens */
             }
+
             .cart-table tr {
-                display: block;
                 margin-bottom: 1rem;
-                border: 1px solid #ddd;
-                border-radius: 8px;
+                border: 1px solid var(--border-color);
+                border-radius: 0.5rem;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-between;
+                align-items: center;
             }
+
             .cart-table td {
-                display: block;
+                border-bottom: none;
                 text-align: right;
-                border: none;
+                padding: 0.8rem;
                 position: relative;
-                padding-left: 50%;
+                flex-basis: 48%; /* Two columns per row */
             }
-            .cart-table td::before {
+
+            .cart-table td:before {
                 content: attr(data-label);
                 position: absolute;
-                left: 6px;
-                width: 45%;
-                padding-right: 10px;
-                white-space: nowrap;
+                left: 0.8rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                color: var(--text-light);
+                font-size: 0.8rem;
+            }
+            /* Specific overrides for first column to take full width */
+            .cart-table td:first-child {
                 text-align: left;
-                font-weight: bold;
+                flex-basis: 100%;
+                border-bottom: 1px solid var(--border-color); /* Retain bottom border for product info */
+                padding-bottom: 1rem;
+            }
+
+            .cart-table td:first-child:before {
+                content: ""; /* Hide label for product name */
+            }
+
+            .cart-item-image {
+                width: 50px;
+                height: 50px;
+                margin-right: 0.5rem;
+            }
+
+            .quantity-controls {
+                justify-content: flex-end; /* Align quantity controls to the right */
+                width: 100%;
+            }
+
+            .remove-button {
+                width: 100%;
+                margin-top: 0.5rem; /* Space below quantity */
+            }
+
+            .cart-summary {
+                font-size: 1.5rem;
+            }
+
+            .empty-cart-message {
+                font-size: 1.2rem;
+            }
+
+            .footer {
+                padding: 1.5rem 1rem;
+                border-top-left-radius: 1rem;
+                border-top-right-radius: 1rem;
+            }
+
+            .cart-actions {
+                flex-direction: column; /* Botones apilados en pantallas pequeñas */
+                align-items: stretch; /* Estira los botones a todo el ancho */
+            }
+
+            .continue-shopping-button,
+            .mercadopago-pay-button {
+                width: 100%; /* Ocupa todo el ancho disponible */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .cart-title {
+                font-size: 1.8rem;
+            }
+            .cart-table td {
+                flex-basis: 100%; /* One column per row on very small screens */
+                text-align: left;
+            }
+            .cart-table td:before {
+                position: static;
+                display: block;
+                margin-bottom: 0.2rem;
+            }
+            .quantity-controls {
+                justify-content: flex-start;
+            }
+            .cart-summary {
+                font-size: 1.3rem;
             }
         }
     </style>
 </head>
 <body>
     <nav class="navbar">
-        <a href="/" class="site-title">Mi Tienda</a>
-        <div class="menu-toggle">☰</div>
-        <ul class="navbar-links">
-            <li><a href="/">Inicio</a></li>
-            <li><a href="/productos">Productos</a></li>
-            <li><a href="/contacto">Contacto</a></li>
-            <li class="cart-icon">
-                <a href="/carrito">Carrito <span id="cart-item-count">0</span></a>
-            </li>
-        </ul>
-        <ul class="navbar-links-mobile">
-            <li><a href="/">Inicio</a></li>
-            <li><a href="/productos">Productos</a></li>
-            <li><a href="/contacto">Contacto</a></li>
-            <li class="cart-icon">
-                <a href="/carrito">Carrito <span id="cart-item-count-mobile">0</span></a>
-            </li>
-        </ul>
+        <a href="{{ route('welcome') }}" class="navbar-brand">{{ config('app.name', 'Mi Tienda') }}</a>
+        <button class="menu-toggle" aria-label="Toggle navigation menu">
+            ☰
+        </button>
+        <div class="navbar-links">
+            <a href="{{ route('cart.show') }}" class="navbar-link">
+                Carrito (<span id="cart-item-count">0</span>)
+            </a>
+            @auth
+                @if (Auth::user()?->isAdmin())
+                    <a href="{{ url('/dashboard') }}" class="navbar-link">Dashboard</a>
+                @endif
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="logout-button-navbar">
+                        {{ __('Cerrar Sesión') }}
+                    </button>
+                </form>
+            @else
+                <a href="{{ route('login') }}" class="navbar-link">Iniciar Sesión</a>
+                @if (Route::has('register'))
+                    <a href="{{ route('register') }}" class="navbar-link">Registrarse</a>
+                @endif
+            @endauth
+        </div>
+
+        <div class="navbar-links-mobile">
+            <a href="{{ route('cart.show') }}" class="navbar-link">
+                Carrito (<span id="cart-item-count-mobile">0</span>)
+            </a>
+            @auth
+                @if (Auth::user()?->isAdmin())
+                    <a href="{{ url('/dashboard') }}" class="navbar-link">Dashboard</a>
+                @endif
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="logout-button-navbar">
+                        {{ __('Cerrar Sesión') }}
+                    </button>
+                </form>
+            @else
+                <a href="{{ route('login') }}" class="navbar-link">Iniciar Sesión</a>
+                @if (Route::has('register'))
+                    <a href="{{ route('register') }}" class="navbar-link">Registrarse</a>
+                @endif
+            @endauth
+        </div>
     </nav>
 
     <div class="cart-container">
-        <h1>Tu Carrito de Compras</h1>
+        <h1 class="cart-title">Tu Carrito de Compras</h1>
 
-        <div class="empty-cart-message" style="display: {{ empty($cartItems) ? 'block' : 'none' }}">
-            Tu carrito está vacío. ¡Empieza a agregar productos!
-        </div>
-
-        <table class="cart-table" style="display: {{ empty($cartItems) ? 'none' : 'table' }}">
+        {{-- La tabla y el mensaje de carrito vacío siempre existen en el DOM.
+             Su visibilidad inicial se controla con `style` y luego con JS. --}}
+        <table class="cart-table" style="display: {{ empty($cartItems) ? 'none' : 'table' }};">
             <thead>
                 <tr>
                     <th>Producto</th>
+                    <th>Precio</th>
                     <th>Cantidad</th>
-                    <th>Precio Unitario</th>
                     <th>Subtotal</th>
-                    <th>Acciones</th>
+                    <th>Acción</th>
                 </tr>
             </thead>
             <tbody id="cart-items-body">
-                @forelse ($cartItems as $item)
-                    <tr data-product-id="{{ $item['product_id'] }}">
-                        <td data-label="Producto">
-                            <div style="display: flex; align-items: center;">
-                                <img src="{{ $item['image_url'] ?? asset('images/default_product.png') }}" alt="{{ $item['name'] }}" style="width: 50px; height: 50px; object-fit: cover; margin-right: 10px;">
-                                {{ $item['name'] }}
-                            </div>
+                @foreach ($cartItems as $item)
+                    <tr data-product-id="{{ $item['product_id'] ?? $item['id'] }}">
+                        <td data-label="Producto:">
+                            <img src="{{ $item['image_path'] ?? $item['image'] ?? 'https://via.placeholder.com/60x60?text=Sin+Imagen' }}" alt="{{ $item['name'] }}" class="cart-item-image">
+                            <span class="cart-item-name">{{ $item['product']->name ?? $item['name'] }}</span>
                         </td>
-                        <td data-label="Cantidad">
+                        <td data-label="Precio:">$<span class="item-price">{{ number_format(($item['price_at_addition'] ?? $item['price']), 2, ',', '.') }}</span></td>
+                        <td data-label="Cantidad:">
                             <div class="quantity-controls">
-                                <button class="decrease-quantity" data-product-id="{{ $item['product_id'] }}">-</button>
-                                <input type="number" class="quantity-input" value="{{ $item['quantity'] }}" min="0" data-product-id="{{ $item['product_id'] }}">
-                                <button class="increase-quantity" data-product-id="{{ $item['product_id'] }}">+</button>
+                                <button class="quantity-button decrease-quantity" data-product-id="{{ $item['product_id'] ?? $item['id'] }}">-</button>
+                                <input type="number" class="quantity-input" value="{{ $item['quantity'] }}" min="1" data-product-id="{{ $item['product_id'] ?? $item['id'] }}">
+                                <button class="quantity-button increase-quantity" data-product-id="{{ $item['product_id'] ?? $item['id'] }}">+</button>
                             </div>
                         </td>
-                        <td data-label="Precio Unitario">${{ number_format($item['price'], 2, ',', '.') }}</td>
-                        <td data-label="Subtotal" class="item-subtotal">${{ number_format($item['subtotal'], 2, ',', '.') }}</td>
-                        <td data-label="Acciones">
-                            <button class="remove-button" data-product-id="{{ $item['product_id'] }}">Eliminar</button>
+                        <td data-label="Subtotal:" class="item-subtotal">${{ number_format((($item['price_at_addition'] ?? $item['price']) * $item['quantity']), 2, ',', '.') }}</td>
+                        <td data-label="Acción:">
+                            <button class="remove-button" data-product-id="{{ $item['product_id'] ?? $item['id'] }}">Eliminar</button>
                         </td>
                     </tr>
-                @empty
-                    {{-- No es necesario poner nada aquí, el mensaje de carrito vacío se maneja con CSS/JS --}}
-                @endforelse
+                @endforeach
             </tbody>
         </table>
 
-        <div class="cart-summary" style="display: {{ empty($cartItems) ? 'none' : 'block' }}">
-            <p>Total: $<span id="cart-total">{{ number_format($total, 2, ',', '.') }}</span></p>
+        <div class="cart-summary" style="display: {{ empty($cartItems) ? 'none' : 'block' }};">
+            Total: $<span id="cart-total">{{ number_format($total, 2, ',', '.') }}</span>
         </div>
 
-        <div class="cart-actions" style="display: {{ empty($cartItems) ? 'none' : 'flex' }}">
-            <a href="/productos" class="continue-shopping">Seguir Comprando</a>
-            <form id="mercadopago-checkout-form" action="{{ route('mercadopago.create_preference') }}" method="POST">
+        <p class="empty-cart-message" style="display: {{ empty($cartItems) ? 'block' : 'none' }};">Tu carrito está vacío. ¡Empieza a añadir productos!</p>
+
+        {{-- Contenedor para los botones de acción del carrito --}}
+        <div class="cart-actions" style="display: {{ empty($cartItems) ? 'none' : 'flex' }};">
+            <a href="{{ route('welcome') }}" class="continue-shopping-button">Seguir Comprando</a>
+
+            {{-- FORMULARIO PARA PAGAR CON MERCADO PAGO --}}
+            <form action="{{ route('mercadopago.pay') }}" method="POST" id="mercadopago-checkout-form">
                 @csrf
+                {{-- Estos valores serán establecidos por JavaScript para asegurar que sean los correctos --}}
                 <input type="hidden" name="amount" id="mercadopago-amount" value="{{ $total }}">
-                <input type="hidden" name="description" id="mercadopago-description" value="Compra de productos en Mi Tienda">
-                <button type="submit" class="checkout-button">Pagar con Mercado Pago</button>
+                <input type="hidden" name="description" id="mercadopago-description" value="Compra en Tienda JD">
+                {{-- ¡ATENCIÓN!: Si tienes un ID de orden creado en tu base de datos antes del pago, puedes pasarlo aquí: --}}
+                {{-- <input type="hidden" name="order_id" value="{{ $order->id }}"> --}}
+
+                <button type="submit" class="mercadopago-pay-button">Pagar con Mercado Pago</button>
             </form>
         </div>
-        {{-- Este botón es solo para cuando el carrito está vacío y no hay acciones de pago --}}
-        <div class="cart-actions" style="display: {{ empty($cartItems) ? 'flex' : 'none' }}">
-            <a href="/productos" class="continue-shopping">Seguir Comprando</a>
+        {{-- El botón "Seguir Comprando" si el carrito está vacío --}}
+        <div class="cart-actions" style="display: {{ empty($cartItems) ? 'flex' : 'none' }}; justify-content: center;">
+            <a href="{{ route('welcome') }}" class="continue-shopping-button">Seguir Comprando</a>
         </div>
+
+
     </div>
+
+    <footer class="footer">
+        <p>&copy; {{ date('Y') }} {{ config('app.name', 'Mi Tienda') }}. Todos los derechos reservados.</p>
+    </footer>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -578,7 +900,7 @@
             }
 
             // Asegurarse de que el botón de pago esté oculto si el carrito está vacío al cargar la página
-            updateCartUI(null, null, null, {{ $total ?? 0 }}, {{ empty($cartItems) ? 0 : count($cartItems) }});
+            updateCartUI(null, null, null, {{ $total }}, {{ empty($cartItems) ? 0 : count($cartItems) }});
         });
     </script>
 </body>
