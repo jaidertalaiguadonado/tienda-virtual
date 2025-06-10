@@ -16,7 +16,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'is_admin',
+        'role', // ¡Asegúrate de que 'role' esté aquí!
     ];
 
     protected $hidden = [
@@ -27,16 +27,16 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
-        'is_admin' => 'boolean', 
+        // ¡Elimina esta línea si no tienes columna 'is_admin' o no la usas!
+        // 'is_admin' => 'boolean',
+        // No necesitas un cast para 'role' si es un string.
     ];
 
-    /**
-     * Determina si el usuario es un administrador.
-     */
+    // Este método ya no es usado por tu AdminMiddleware, pero puedes mantenerlo
+    // si lo usas en otras partes de tu aplicación.
     public function isAdmin(): bool
     {
-    
-        return (bool) $this->is_admin;
+        return $this->role === 'admin'; // Usa la columna 'role'
     }
 
     public function cart()

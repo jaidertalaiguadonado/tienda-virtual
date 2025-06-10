@@ -11,7 +11,8 @@ use App\Models\Product;
 use App\Http\Controllers\MercadoPagoController;
 use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\UserController; // ¡NUEVA IMPORTACIÓN: Necesitas un controlador para manejar la lógica de guardar la ubicación!
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\Admin\OrderController; // Asegúrate de que esta línea esté si tienes OrderController
 
 
 /*
@@ -24,14 +25,11 @@ use App\Http\Controllers\UserController; // ¡NUEVA IMPORTACIÓN: Necesitas un c
 // RUTAS PÚBLICAS (ACCESIBLES POR TODOS)
 // =========================================================
 
-// Ruta principal para la página de bienvenida con productos
-// Ahora esta es SÓLO para mostrar productos, sin añadir al carrito directamente para no logueados.
 Route::get('/', function () {
     $products = Product::with('category')->latest()->paginate(12);
     return view('welcome', compact('products'));
 })->name('welcome');
 
-// El webhook de Mercado Pago DEBE ser accesible públicamente, ya que MP lo llamará.
 Route::post('/mercadopago/webhook', [MercadoPagoController::class, 'handleWebhook'])->name('mercadopago.webhook');
 
 
@@ -41,30 +39,18 @@ Route::post('/mercadopago/webhook', [MercadoPagoController::class, 'handleWebhoo
 
 Route::middleware('auth')->group(function () {
 
-    // NUEVO: La ruta '/home' como el nuevo home para usuarios logueados.
-    // Aquí es donde se encontrarán los productos con la funcionalidad de añadir al carrito.
+    // NUEVA: La ruta '/home' para usuarios logueados NO admin.
     Route::get('/home', [HomeController::class, 'index'])->name('home');
 
-    // NUEVO: Redirecciona la ruta '/dashboard' (por defecto de Breeze) a '/home'.
-    // Esto es para que después de iniciar sesión, el usuario vaya a tu nueva "home de pedidos".
-    Route::get('/dashboard', function () {
-        return redirect()->route('home');
-    })->name('dashboard'); // Mantén este nombre de ruta por compatibilidad con Breeze.
-
-
-    // --- Rutas del Carrito de Compras (¡Ahora protegidas por 'auth'!) ---
+    // --- Rutas del Carrito de Compras ---
     Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
     Route::get('/cart', [CartController::class, 'show'])->name('cart.show');
     Route::post('/cart/update', [CartController::class, 'update'])->name('cart.update');
     Route::post('/cart/remove', [CartController::class, 'remove'])->name('cart.remove');
-    // Si usas una ruta para vaciar el carrito:
-    // Route::post('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
 
 
-    // --- Rutas de Mercado Pago (¡También protegidas por 'auth'!) ---
-    // La ruta que crea la preferencia de pago
+    // --- Rutas de Mercado Pago ---
     Route::post('/process-payment', [MercadoPagoController::class, 'createPaymentPreference'])->name('mercadopago.pay');
-    // Las rutas de retorno de Mercado Pago (el cliente regresa a estas URLs)
     Route::get('/payment/success', [MercadoPagoController::class, 'paymentSuccess'])->name('mercadopago.success');
     Route::get('/payment/failure', [MercadoPagoController::class, 'paymentFailure'])->name('mercadopago.failure');
     Route::get('/payment/pending', [MercadoPagoController::class, 'paymentPending'])->name('mercadopago.pending');
@@ -75,10 +61,16 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // ¡¡¡AQUÍ ES DONDE DEBES AGREGAR LA RUTA PARA GUARDAR LA UBICACIÓN!!!
-    // Asegúrate de que tu HomeController o un nuevo UserController tenga un método para manejar esto.
-    // He importado 'App\Http\Controllers\UserController;' arriba.
+    // Ruta para guardar la ubicación del usuario
     Route::post('/user/save-location', [UserController::class, 'saveLocation'])->name('user.save_location');
+
+    // Aquí es donde residía el dashboard original para los usuarios,
+    // si no era el admin el que iniciaba sesión
+    // Esto es para que funcione si el usuario normal iniciaba sesión y veía el dashboard normal.
+    // Si no había una redirección para usuarios normales y siempre iban al home, puedes ajustar esto.
+    Route::get('/user-dashboard', function () { // Puedes ponerle otro nombre si no era 'dashboard'
+        return view('dashboard'); // Si tu vista de dashboard para usuarios normales es 'dashboard.blade.php'
+    })->name('user.dashboard'); // Nombre de ruta para usuarios normales
 
 }); // Fin del grupo de rutas protegidas por 'auth'
 
@@ -87,11 +79,29 @@ Route::middleware('auth')->group(function () {
 // RUTAS DE ADMINISTRACIÓN (PROTEGIDAS POR 'auth' y 'admin')
 // =========================================================
 
-// Asumiendo que tu middleware 'admin' está correctamente definido
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::resource('categories', CategoryController::class);
-    Route::resource('products', ProductController::class);
-    // ... agrega aquí otras rutas específicas del panel de administración
+// ESTE ES EL CAMBIO CLAVE: Mover la ruta 'dashboard' con su nombre 'dashboard' a este grupo.
+// Esto significa que si un usuario autenticado intenta acceder a la ruta nombrada 'dashboard' (la que Breeze usa por defecto),
+// y está protegido por 'admin' middleware, solo los admins podrán acceder y verán su dashboard.
+Route::middleware(['auth', 'admin'])->group(function () {
+    // La ruta '/dashboard' ahora está dentro del middleware 'admin'.
+    // Si un administrador inicia sesión, Breeze lo envía a 'dashboard',
+    // y aquí es donde será interceptado por el middleware 'admin' y luego mostrará el dashboard de admin.
+    Route::get('/dashboard', function () {
+        // Asumiendo que tu dashboard de administrador es la vista 'dashboard.blade.php'
+        // que tienes directamente en 'resources/views/'
+        return view('dashboard');
+    })->name('dashboard'); // Mantiene el nombre de ruta 'dashboard' para que Breeze lo use.
+
+
+    // El resto de tus rutas de administración
+    Route::prefix('admin')->name('admin.')->group(function () {
+        // Aquí no necesitas un /dashboard si el de arriba ya lo maneja
+        // Route::get('/dashboard', function () { return view('admin.dashboard'); })->name('dashboard');
+
+        Route::resource('categories', CategoryController::class);
+        Route::resource('products', ProductController::class);
+        Route::resource('orders', OrderController::class)->only(['index', 'show', 'update', 'destroy']);
+    });
 });
 
 

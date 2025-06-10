@@ -31,6 +31,8 @@
             --logout-color-text: #DC3545; 
             --logout-color-bg: #ffffff; 
             --logout-hover-bg: #f0f0f0; 
+            --tertiary-color: #28a745; /* Color para el nuevo botón de pedidos */
+            --tertiary-light: #218838; /* Color hover para el nuevo botón de pedidos */
         }
 
         
@@ -160,6 +162,14 @@
             background-color: #138D9E; 
         }
 
+        /* NUEVO ESTILO: Botón para Pedidos */
+        .action-button.tertiary {
+            background-color: var(--tertiary-color); /* Un color verde, por ejemplo */
+        }
+
+        .action-button.tertiary:hover {
+            background-color: var(--tertiary-light); /* Un verde más oscuro al pasar el ratón */
+        }
         
         .logout-button {
             background-color: var(--logout-color-bg); 
@@ -275,7 +285,7 @@
         <div class="content-container">
             <div class="card-container">
                 <div class="card-content">
-                    {{ __("¡Bienvenido a tu panel de administración! Aquí puedes gestionar tus categorías y productos.") }}
+                    {{ __("¡Bienvenido a tu panel de administración! Aquí puedes gestionar tus categorías, productos y ver los pedidos de los usuarios.") }}
                 </div>
 
                 <div class="action-buttons-container">
@@ -284,6 +294,10 @@
                     </a>
                     <a href="{{ route('admin.products.index') }}" class="action-button secondary">
                         {{ __('Ver/Gestionar Productos') }}
+                    </a>
+                    {{-- NUEVO BOTÓN PARA PEDIDOS --}}
+                    <a href="{{ route('admin.orders.index') }}" class="action-button tertiary">
+                        {{ __('Ver Pedidos') }}
                     </a>
                 </div>
             </div>

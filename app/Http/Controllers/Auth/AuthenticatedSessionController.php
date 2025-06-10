@@ -28,6 +28,8 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Esta es la redirección por defecto de Laravel Breeze.
+        // Después de iniciar sesión, redirige a la ruta nombrada 'dashboard'.
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
