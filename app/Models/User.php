@@ -7,6 +7,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Cart;
+use App\Models\Location; // <--- ¡Importante! Asegúrate de que esta línea esté si tienes el modelo Location
 
 class User extends Authenticatable
 {
@@ -16,7 +17,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role', // ¡Asegúrate de que 'role' esté aquí!
+        'role', // Correcto: Asegúrate de que 'role' esté aquí porque es la columna en tu DB.
     ];
 
     protected $hidden = [
@@ -27,20 +28,27 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
-        // ¡Elimina esta línea si no tienes columna 'is_admin' o no la usas!
-        // 'is_admin' => 'boolean',
-        // No necesitas un cast para 'role' si es un string.
+        // Correcto: NO necesitas 'is_admin' => 'boolean' si no tienes esa columna.
+        // Ni necesitas un cast para 'role' si es un string (que es lo más común).
     ];
 
-    // Este método ya no es usado por tu AdminMiddleware, pero puedes mantenerlo
-    // si lo usas en otras partes de tu aplicación.
+    // Correcto: Este método ahora usa la columna 'role' para determinar si es admin.
+    // Es usado por tu AdminMiddleware.
     public function isAdmin(): bool
     {
-        return $this->role === 'admin'; // Usa la columna 'role'
+        return $this->role === 'admin'; // Usa la columna 'role' para la comprobación.
     }
 
+    // Correcto: Tu relación con el carrito.
     public function cart()
     {
         return $this->hasOne(Cart::class);
+    }
+
+    // ¡¡¡IMPORTANTE!!!: Asegúrate de que la relación con el modelo Location esté aquí.
+    // La vista de pedidos la necesita para mostrar la ubicación del usuario.
+    public function location()
+    {
+        return $this->hasOne(Location::class);
     }
 }
