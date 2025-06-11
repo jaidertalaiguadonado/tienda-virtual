@@ -10,10 +10,10 @@ return new class extends Migration
     {
         Schema::create('order_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('order_id')->constrained()->onDelete('cascade'); // Clave foránea al pedido
-            $table->foreignId('product_id')->constrained()->onDelete('cascade'); // Clave foránea al producto
+            $table->foreignId('order_id')->constrained()->onDelete('cascade'); 
+            $table->foreignId('product_id')->constrained()->onDelete('cascade'); 
             $table->integer('quantity');
-            $table->decimal('price', 10, 2); // Precio unitario del producto en el momento de la compra
+            $table->decimal('price', 10, 2); 
             $table->timestamps();
         });
     }

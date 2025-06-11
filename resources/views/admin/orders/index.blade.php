@@ -6,7 +6,7 @@
     <title>Gestión de Pedidos - Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        /* Variables CSS */
+        
         :root {
             --primary-color: #007BFF;
             --primary-light: #66B2FF;
@@ -29,8 +29,8 @@
             --error-color: #dc3545;
             --info-color: #17a2b8;
 
-            /* Nuevas variables para el botón de Mercado Pago */
-            --mercadopago-button-color: #009EE3; /* Azul de Mercado Pago */
+            
+            --mercadopago-button-color: #009EE3; 
             --mercadopago-button-hover: #008ACD;
             --mercadopago-text-color: #ffffff;
         }
@@ -50,7 +50,7 @@
             color: var(--text-dark);
             font-size: 16px;
 
-            /* Sticky Footer - Flexbox layout */
+            
             display: flex;
             flex-direction: column;
             min-height: 100vh;
@@ -61,7 +61,7 @@
             color: inherit;
         }
 
-        /* Navbar Styles */
+        
         .navbar {
             background-color: var(--card-background);
             border-bottom: 1px solid var(--border-color);
@@ -161,7 +161,7 @@
             box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.4);
         }
 
-        /* General Content Area */
+        
         .container {
             max-width: 1000px;
             margin: 3rem auto;
@@ -220,7 +220,7 @@
             color: var(--primary-light);
         }
 
-        /* Pagination styles */
+        
         .pagination {
             display: flex;
             justify-content: center;
@@ -268,7 +268,7 @@
             cursor: not-allowed;
         }
 
-        /* Footer Styles */
+        
         .footer {
             background-color: var(--primary-color);
             color: var(--button-text);
@@ -286,7 +286,7 @@
             opacity: 0.8;
         }
 
-        /* Responsive Adjustments */
+        
         @media (max-width: 768px) {
             .navbar {
                 padding: 1rem 1rem;
@@ -353,7 +353,7 @@
                 flex-shrink: 0;
             }
 
-            /* Hides label for first column on mobile (e.g., ID) */
+            
             .data-table td:first-child:before {
                 content: "";
                 display: none;
@@ -410,7 +410,7 @@
 </head>
 <body>
     <nav class="navbar">
-        <a href="{{ route('dashboard') }}" class="navbar-brand">Admin Panel</a>
+        <a href="{{ route('dashboard') }}" class="navbar-brand">TIENDA JD</a>
         <button class="menu-toggle" aria-label="Toggle navigation">&#9776;</button>
         <div class="navbar-links" id="navbarLinks">
             <a href="{{ route('dashboard') }}" class="navbar-link">Dashboard</a>
@@ -483,7 +483,7 @@
     </div>
 
     <footer class="footer">
-        <p>&copy; {{ date('Y') }} Tu Empresa. Todos los derechos reservados.</p>
+        <p>&copy; {{ date('Y') }} Tienda JD. Todos los derechos reservados.</p>
     </footer>
 
     <script>

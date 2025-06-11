@@ -12,7 +12,7 @@
 
     @vite(['resources/js/app.js'])
 
-    {{-- ESTILOS ESPECÍFICOS PARA ESTA PÁGINA (todo el CSS aquí) --}}
+    
     <style>
         
         :root {
@@ -162,7 +162,7 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
-        /* Se remueven los estilos .file-input y relacionados, ya que no se usará input type="file" */
+        
         /*
         .file-input { ... }
         .file-input:hover { ... }
@@ -189,7 +189,7 @@
             height: 1.25rem;
             flex-shrink: 0; 
             cursor: pointer;
-            -webkit-appearance: none; /* Add this to remove default browser styles for checkboxes */
+            -webkit-appearance: none; 
             -moz-appearance: none;
             appearance: none;
             background-color: #fff;
@@ -200,7 +200,7 @@
             border-color: var(--primary-color);
         }
         .form-checkbox:checked::after {
-            content: '\2713'; /* Unicode checkmark character */
+            content: '\2713'; 
             font-size: 0.8rem;
             color: white;
             position: absolute;
@@ -226,7 +226,7 @@
             align-items: center;
             justify-content: flex-end; 
             margin-top: 2rem; 
-            gap: 1rem; /* Added gap for spacing between buttons */
+            gap: 1rem; 
         }
 
         
@@ -244,7 +244,7 @@
             letter-spacing: 0.05em;
             transition: background-color 0.3s ease, transform 0.2s ease;
             text-decoration: none;
-            /* margin-right: 1rem; */ /* Removed as gap is used */
+             
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             white-space: nowrap;
         }
@@ -313,7 +313,7 @@
             .card-container {
                 padding: 1.5rem;
             }
-            .form-input, .form-select, .form-textarea { /* .file-input removed */
+            .form-input, .form-select, .form-textarea { 
                 padding: 0.6rem 0.8rem;
             }
             .primary-button, .cancel-button {
@@ -354,10 +354,10 @@
             .form-label {
                 font-size: 0.9rem;
             }
-            .form-input, .form-select, .form-textarea { /* .file-input removed */
+            .form-input, .form-select, .form-textarea { 
                 font-size: 0.9rem;
             }
-            .validation-error { /* .file-input-help-text removed */
+            .validation-error { 
                 font-size: 0.8rem;
             }
             .current-image {
@@ -379,7 +379,7 @@
     <div class="main-content-wrapper">
         <div class="content-container">
             <div class="card-container">
-                {{-- Importante: se quita enctype="multipart/form-data" ya que no subiremos archivos --}}
+                
                 <form method="POST" action="{{ route('admin.products.update', $product) }}">
                     @csrf
                     @method('PUT')
@@ -431,16 +431,16 @@
                         @enderror
                     </div>
 
-                    {{-- Muestra la imagen actual si existe --}}
-                    @if ($product->image_path) {{-- Asegúrate de usar 'image_path' si así se llama en tu modelo/DB --}}
+                    
+                    @if ($product->image_path) 
                         <div class="current-image-container form-field">
                             <label class="form-label">{{ __('Imagen Actual') }}</label>
-                            {{-- Se muestra la URL directamente --}}
+                            
                             <img src="{{ $product->image_path }}" alt="{{ $product->name }}" class="current-image">
                         </div>
                     @endif
 
-                    {{-- CAMBIO CLAVE AQUÍ: De input type="file" a input type="text" --}}
+                    
                     <div class="form-field">
                         <label for="image_path" class="form-label">{{ __('URL de la Imagen del Producto (Opcional)') }}</label>
                         {{-- Se usa 'image_path' para el name e id --}}

@@ -13,21 +13,21 @@ return new class extends Migration
     {
         Schema::create('cart_items', function (Blueprint $table) {
             $table->id();
-            // 'cart_id' será una clave foránea a la tabla 'carts'
-            // Esto vincula el ítem a un carrito específico.
+            
+            
             $table->foreignId('cart_id')->constrained()->onDelete('cascade');
-            // 'product_id' será una clave foránea a la tabla 'products'
-            // Esto vincula el ítem a un producto existente.
+            
+            
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->integer('quantity')->default(1); // Cantidad del producto en el carrito
-            // Puedes almacenar el precio al momento de añadirlo al carrito
-            // Esto es útil si los precios cambian en el futuro.
+            $table->integer('quantity')->default(1); 
+            
+            
             $table->decimal('price_at_addition', 10, 2);
-            // Si quieres almacenar la imagen para mostrarla fácilmente
+            
             $table->string('image_path')->nullable();
-            $table->timestamps(); // created_at, updated_at
+            $table->timestamps(); 
 
-            // Esto asegura que un producto solo pueda estar una vez en un carrito específico
+            
             $table->unique(['cart_id', 'product_id']);
         });
     }

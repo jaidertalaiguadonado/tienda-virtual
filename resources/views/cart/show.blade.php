@@ -7,15 +7,15 @@
 
     <title>{{ config('app.name', 'Tienda JD') }} - Carrito</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https:
+    <link rel="preconnect" href="https:
+    <link href="https:
 
     @vite(['resources/js/app.js'])     
     
     <style>
 
-        /* Variables CSS */
+        
 :root {
     --primary-color: #007BFF;
     --primary-light: #66B2FF;
@@ -38,8 +38,8 @@
     --error-color: #dc3545;
     --info-color: #17a2b8;
 
-    /* Nuevas variables para el botón de Mercado Pago */
-    --mercadopago-button-color: #009EE3; /* Azul de Mercado Pago */
+    
+    --mercadopago-button-color: #009EE3; 
     --mercadopago-button-hover: #008ACD;
     --mercadopago-text-color: #ffffff;
 }
@@ -59,7 +59,7 @@ body {
     color: var(--text-dark);
     font-size: 16px;
 
-    /* Sticky Footer - Flexbox layout */
+    
     display: flex;
     flex-direction: column;
     min-height: 100vh;
@@ -70,7 +70,7 @@ a {
     color: inherit;
 }
 
-/* Navbar Styles */
+
 .navbar {
     background-color: var(--card-background);
     border-bottom: 1px solid var(--border-color);
@@ -170,7 +170,7 @@ a {
     box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.4);
 }
 
-/* Main Content Area */
+
 .cart-container {
     max-width: 1000px;
     margin: 3rem auto;
@@ -358,7 +358,7 @@ a {
     transform: translateY(-2px);
 }
 
-/* Footer Styles */
+
 .footer {
     background-color: var(--primary-color);
     color: var(--button-text);
@@ -376,7 +376,7 @@ a {
     opacity: 0.8;
 }
 
-/* Responsive Adjustments */
+
 @media (max-width: 768px) {
     .navbar {
         padding: 1rem 1rem;
@@ -395,8 +395,8 @@ a {
 
     .cart-container {
         margin: 2rem 1rem;
-        /* --- MODIFIED --- */
-        padding: 1.5rem; /* Base padding for the container */
+        
+        padding: 1.5rem; 
     }
 
     .cart-title {
@@ -419,23 +419,23 @@ a {
         border-radius: 0.5rem;
         flex-direction: column;
         align-items: flex-start;
-        /* --- MODIFIED --- */
-        padding: 1rem; /* Padding for each product card */
-        box-sizing: border-box; /* Crucial to include padding in width calculation */
+        
+        padding: 1rem; 
+        box-sizing: border-box; 
     }
 
     .cart-table td {
         border-bottom: none;
         text-align: left;
-        /* --- MODIFIED --- */
-        padding: 0.4rem 0; /* Vertical padding, no horizontal padding here */
+        
+        padding: 0.4rem 0; 
         position: relative;
         width: 100%;
         display: flex;
         justify-content: flex-start;
         align-items: center;
         gap: 0.5rem;
-        box-sizing: border-box; /* Crucial to include padding in width calculation */
+        box-sizing: border-box; 
     }
 
     .cart-table td:before {
@@ -571,13 +571,13 @@ a {
     }
 
     .cart-table tr {
-        /* --- MODIFIED --- */
-        padding: 0.8rem; /* Consistent padding for the card */
+        
+        padding: 0.8rem; 
     }
 
     .cart-table td {
-        /* --- MODIFIED --- */
-        padding: 0.3rem 0; /* Vertical padding, no horizontal padding here */
+        
+        padding: 0.3rem 0; 
         gap: 0.3rem;
     }
 
@@ -615,7 +615,7 @@ a {
         padding: 0.5rem 0.8rem;
         font-size: 0.85rem;
     }
-    /*solucion pcp */
+    
 
     .cart-table td[data-label="Acción:"] {
         margin-top: 0.8rem;
@@ -696,8 +696,7 @@ a {
     <div class="cart-container">
         <h1 class="cart-title">Tu Carrito de Compras</h1>
 
-        {{-- La tabla y el mensaje de carrito vacío siempre existen en el DOM.
-             Su visibilidad inicial se controla con `style` y luego con JS. --}}
+        
         <table class="cart-table" style="display: {{ empty($cartItems) ? 'none' : 'table' }};">
             <thead>
                 <tr>
@@ -712,7 +711,7 @@ a {
                 @foreach ($cartItems as $item)
                     <tr data-product-id="{{ $item['product_id'] ?? $item['id'] }}">
                         <td data-label="Producto:">
-                            <img src="{{ $item['image_path'] ?? $item['image'] ?? 'https://via.placeholder.com/60x60?text=Sin+Imagen' }}" alt="{{ $item['name'] }}" class="cart-item-image">
+                            <img src="{{ $item['image_path'] ?? $item['image'] ?? 'https:
                             <span class="cart-item-name">{{ $item['product']->name ?? $item['name'] }}</span>
                         </td>
                         <td data-label="Precio:">$<span class="item-price">{{ number_format(($item['price_at_addition'] ?? $item['price']), 2, ',', '.') }}</span></td>
@@ -738,17 +737,17 @@ a {
 
         <p class="empty-cart-message" style="display: {{ empty($cartItems) ? 'block' : 'none' }};">Tu carrito está vacío. ¡Empieza a añadir productos!</p>
 
-        {{-- Contenedor para los botones de acción del carrito --}}
+        
         <div class="cart-actions" style="display: {{ empty($cartItems) ? 'none' : 'flex' }};">
             <a href="{{ route('welcome') }}" class="continue-shopping-button">Seguir Comprando</a>
 
-            {{-- FORMULARIO PARA PAGAR CON MERCADO PAGO --}}
+            
             <form action="{{ route('mercadopago.pay') }}" method="POST" id="mercadopago-checkout-form">
                 @csrf
-                {{-- CAMBIO CRÍTICO: Renombrado de 'amount' a 'total_amount' para que coincida con el controlador --}}
+                
                 <input type="hidden" name="total_amount" id="mercadopago-amount" value="{{ $total }}">
                 <input type="hidden" name="description" id="mercadopago-description" value="Compra en Tienda JD">
-                {{-- ¡ATENCIÓN!: Si tienes un ID de orden creado en tu base de datos antes del pago, puedes pasarlo aquí: --}}
+                
                 {{-- <input type="hidden" name="order_id" value="{{ $order->id }}"> --}}
 
                 <button type="submit" class="mercadopago-pay-button">Pagar con Mercado Pago</button>
@@ -774,31 +773,31 @@ a {
             const cartItemCountElement = document.getElementById('cart-item-count');
             const cartItemCountMobileElement = document.getElementById('cart-item-count-mobile');
             const cartItemsBody = document.getElementById('cart-items-body');
-            const cartTable = document.querySelector('.cart-table'); // Añadir referencia a la tabla
+            const cartTable = document.querySelector('.cart-table'); 
             const cartTotalElement = document.getElementById('cart-total');
             const cartSummary = document.querySelector('.cart-summary');
             const emptyCartMessage = document.querySelector('.empty-cart-message');
-            const cartActionsContainer = document.querySelector('.cart-actions'); // Nuevo: Contenedor de botones
+            const cartActionsContainer = document.querySelector('.cart-actions'); 
 
-            // Elementos del formulario de Mercado Pago
+            
             const mercadopagoAmountInput = document.getElementById('mercadopago-amount');
             const mercadopagoDescriptionInput = document.getElementById('mercadopago-description');
             const mercadopagoCheckoutForm = document.getElementById('mercadopago-checkout-form');
 
 
-            // Función para alternar el menú móvil
+            
             if (menuToggle && mobileMenu) {
                 menuToggle.addEventListener('click', function() {
                     mobileMenu.classList.toggle('active');
                 });
             }
 
-            // Función para formatear el número para la UI (usando coma para decimales y punto para miles)
+            
             function formatNumberForUI(number) {
                 return parseFloat(number).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             }
 
-            // Función para obtener el número de ítems del carrito desde la sesión/DB
+            
             function getCartCount() {
                 fetch('/api/cart-count', {
                     method: 'GET',
@@ -822,83 +821,83 @@ a {
                 });
             }
 
-            // Llama a la función al cargar la página para inicializar el contador
+            
             getCartCount();
 
-            // Función para actualizar el subtotal de un ítem y el total general
+            
             function updateCartUI(productId, newQuantity, newSubtotal, newTotal, cartCount) {
                 const row = cartItemsBody.querySelector(`tr[data-product-id="${productId}"]`);
                 const cartIsEmpty = cartCount === 0;
 
-                if (newQuantity <= 0) { // Si la cantidad es 0 o menos, el ítem se ha eliminado
+                if (newQuantity <= 0) { 
                     if (row) {
-                        row.remove(); // Eliminar la fila del DOM
+                        row.remove(); 
                     }
-                } else if (row) { // Si el ítem aún existe y tiene cantidad > 0
+                } else if (row) { 
                     row.querySelector('.quantity-input').value = newQuantity;
                     row.querySelector('.item-subtotal').textContent = '$' + formatNumberForUI(newSubtotal);
                 }
 
-                // Actualizar el total general, incluso si el carrito está vacío (mostrar 0.00)
+                
                 if (cartTotalElement) {
                     cartTotalElement.textContent = formatNumberForUI(newTotal);
-                    // Actualiza el hidden input del formulario de Mercado Pago
+                    
                     if (mercadopagoAmountInput) {
-                        mercadopagoAmountInput.value = newTotal; // Asegura que el valor sea un número flotante
+                        mercadopagoAmountInput.value = newTotal; 
                     }
                 }
 
 
-                // Manejar la visibilidad del resumen del carrito y el mensaje de carrito vacío
+                
                 if (cartIsEmpty) {
-                    cartItemsBody.innerHTML = ''; // Asegurarse de que no queden ítems visualmente
+                    cartItemsBody.innerHTML = ''; 
 
-                    if (cartTable) { // Oculta la tabla completa
+                    if (cartTable) { 
                         cartTable.style.display = 'none';
                     }
-                    if (cartSummary) { // Oculta el resumen del total
+                    if (cartSummary) { 
                         cartSummary.style.display = 'none';
                     }
-                    if (emptyCartMessage) { // Muestra el mensaje de carrito vacío
+                    if (emptyCartMessage) { 
                         emptyCartMessage.style.display = 'block';
                     }
-                    // Oculta el contenedor de acciones si el carrito está vacío
+                    
                     if (cartActionsContainer) {
                         cartActionsContainer.style.display = 'none';
                     }
-                    // Muestra el botón "Seguir Comprando" que está fuera del cart-actions para el carrito vacío
+                    
                     document.querySelector('.cart-container > .cart-actions:last-of-type').style.display = 'flex';
 
 
                 } else {
-                    if (cartTable) { // Muestra la tabla completa
-                        cartTable.style.display = 'table'; // Usar 'table' para tablas
+                    if (cartTable) { 
+                        cartTable.style.display = 'table'; 
                     }
-                    if (cartSummary) { // Muestra el resumen del total
+                    if (cartSummary) { 
                         cartSummary.style.display = 'block';
                     }
-                    if (emptyCartMessage) { // Oculta el mensaje de carrito vacío
+                    if (emptyCartMessage) { 
                         emptyCartMessage.style.display = 'none';
                     }
-                    // Muestra el contenedor de acciones si el carrito tiene ítems
+                    
                     if (cartActionsContainer) {
                         cartActionsContainer.style.display = 'flex';
                     }
-                    // Oculta el botón "Seguir Comprando" duplicado
+                    
                     document.querySelector('.cart-container > .cart-actions:last-of-type').style.display = 'none';
 
                 }
             }
 
 
-            // Manejar cambios de cantidad y eliminación de ítems
+            
             cartItemsBody.addEventListener('click', function(event) {
                 const target = event.target;
                 const productId = target.dataset.productId;
 
-                if (!productId) return; // No es un botón de cantidad o eliminación
+                if (!productId) return; 
 
-                // Incrementar o decrementar cantidad
+                
                 if (target.classList.contains('increase-quantity') || target.classList.contains('decrease-quantity')) {
                     const quantityInput = target.closest('.quantity-controls').querySelector('.quantity-input');
                     let newQuantity = parseInt(quantityInput.value);
@@ -911,11 +910,11 @@ a {
 
                     if (newQuantity < 1) {
                         if (!confirm('¿Estás seguro de que quieres eliminar este producto del carrito?')) {
-                            return; // Si cancela, no hagas nada
+                            return; 
                         }
                     }
 
-                    // Enviar petición AJAX para actualizar
+                    
                     fetch('{{ route('cart.update') }}', {
                         method: 'POST',
                         headers: {
@@ -936,9 +935,9 @@ a {
                     })
                     .then(data => {
                         console.log('Cantidad actualizada:', data);
-                        // Asegúrate de pasar data.cartCount a updateCartUI
+                        
                         updateCartUI(productId, data.item.quantity, data.item.subtotal, data.total, data.cartCount);
-                        getCartCount(); // Actualizar contador del navbar
+                        getCartCount(); 
                     })
                     .catch(error => {
                         console.error('Error:', error);
@@ -946,7 +945,7 @@ a {
                     });
                 }
 
-                // Eliminar ítem
+                
                 if (target.classList.contains('remove-button')) {
                     if (!confirm('¿Estás seguro de que quieres eliminar este producto del carrito?')) {
                         return;
@@ -969,9 +968,9 @@ a {
                     })
                     .then(data => {
                         console.log('Producto eliminado:', data);
-                        // No es necesario eliminar la fila aquí, updateCartUI lo hará si newQuantity <= 0 (o si se pasa cartCount = 0)
-                        updateCartUI(productId, 0, 0, data.total, data.cartCount); // Pasar 0 para que elimine la fila y recalcule
-                        getCartCount(); // Actualizar contador del navbar
+                        
+                        updateCartUI(productId, 0, 0, data.total, data.cartCount); 
+                        getCartCount(); 
                     })
                     .catch(error => {
                         console.error('Error:', error);
@@ -980,7 +979,7 @@ a {
                 }
             });
 
-            // Manejar cambio manual en el input de cantidad
+            
             cartItemsBody.addEventListener('change', function(event) {
                 const target = event.target;
                 if (target.classList.contains('quantity-input')) {
@@ -988,13 +987,13 @@ a {
                     let newQuantity = parseInt(target.value);
 
                     if (isNaN(newQuantity) || newQuantity < 0) {
-                        newQuantity = 1; // Restablecer a 1 si es inválido
+                        newQuantity = 1; 
                         target.value = 1;
                     }
 
                     if (newQuantity === 0) {
                         if (!confirm('¿Estás seguro de que quieres eliminar este producto del carrito?')) {
-                            target.value = 1; // Restablecer si cancela
+                            target.value = 1; 
                             return;
                         }
                     }
@@ -1019,9 +1018,9 @@ a {
                     })
                     .then(data => {
                         console.log('Cantidad actualizada:', data);
-                        // Asegúrate de pasar data.cartCount a updateCartUI
+                        
                         updateCartUI(productId, data.item.quantity, data.item.subtotal, data.total, data.cartCount);
-                        getCartCount(); // Actualizar contador del navbar
+                        getCartCount(); 
                     })
                     .catch(error => {
                         console.error('Error:', error);
@@ -1030,14 +1029,14 @@ a {
                 }
             });
 
-            // Actualizar la descripción del formulario de Mercado Pago si cambia
+            
             if (mercadopagoDescriptionInput) {
-                // Podrías tener una lógica más sofisticada aquí si quieres una descripción dinámica.
-                // Por ahora, es un valor fijo.
-                // mercadopagoDescriptionInput.value = "Compra de varios productos en Tienda JD";
+                
+                
+                
             }
 
-            // Asegurarse de que el botón de pago esté oculto si el carrito está vacío al cargar la página
+            
             updateCartUI(null, null, null, {{ $total }}, {{ empty($cartItems) ? 0 : count($cartItems) }});
         });
     </script>

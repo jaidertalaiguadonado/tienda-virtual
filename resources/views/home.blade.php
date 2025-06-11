@@ -14,7 +14,7 @@
     @vite(['resources/js/app.js'])
 
     <style>
-        /* Tus estilos CSS existentes */
+        
         :root {
             --primary-color: #007BFF;
             --primary-light: #66B2FF;
@@ -607,7 +607,7 @@
                         @if ($product->image_path)
                             <img src="{{ $product->image_path }}" alt="{{ $product->name }}" class="product-card-image">
                         @else
-                            <img src="https://via.placeholder.com/400x300?text=Sin+Imagen" alt="Sin Imagen" class="product-card-image">
+                            <img src="https:
                         @endif
                     </div>
                     <div class="product-card-body">
@@ -629,7 +629,7 @@
                                     data-product-id="{{ $product->id }}"
                                     data-product-name="{{ $product->name }}"
                                     data-product-price="{{ $product->price }}"
-                                    data-product-image="{{ $product->image_path ?? 'https://via.placeholder.com/60x60?text=Sin+Imagen' }}"
+                                    data-product-image="{{ $product->image_path ?? 'https:
                                 >
                                     Añadir al Carrito
                                 </button>
@@ -658,31 +658,31 @@
 
 <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // --- Declaración de Variables al inicio ---
+            
             const menuToggle = document.querySelector('.menu-toggle');
             const mobileMenu = document.querySelector('.navbar-links-mobile');
-            // Asegúrate de que el token CSRF esté disponible en el meta tag del head
+            
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
             const cartItemCountElement = document.getElementById('cart-item-count');
             const cartItemCountMobileElement = document.getElementById('cart-item-count-mobile');
 
-            // --- Lógica del Menú Móvil ---
+            
             if (menuToggle && mobileMenu) {
                 menuToggle.addEventListener('click', function() {
                     mobileMenu.classList.toggle('active');
                 });
             }
 
-            // --- Funciones para el Carrito ---
+            
 
-            // Función para obtener el número de ítems del carrito
+            
             function getCartCount() {
-                fetch('/api/cart-count', { // Asegúrate de que esta ruta API esté definida en routes/api.php
+                fetch('/api/cart-count', { 
                     method: 'GET',
                     headers: { 'Accept': 'application/json' }
                 })
                 .then(response => {
-                    // Si la respuesta no es OK (ej. 404), devuelve un valor por defecto
+                    
                     if (!response.ok) {
                         console.error('Error al obtener el contador del carrito. Estado:', response.status);
                         return { cartCount: 0 };
@@ -700,23 +700,23 @@
                 });
             }
 
-            // Llama a la función al cargar la página para inicializar el contador
+            
             getCartCount();
 
 
-            // Añadir evento a todos los botones "Añadir al Carrito"
+            
             const addToCartButtons = document.querySelectorAll('.add-to-cart-button');
             addToCartButtons.forEach(button => {
-                // Solo si el botón no está deshabilitado y no tiene la clase 'login-button' (que solo debería estar en welcome.blade.php)
+                
                 if (!button.disabled && !button.classList.contains('login-button')) {
                     button.addEventListener('click', function() {
                         const productId = this.dataset.productId;
-                        // const productName = this.dataset.productName; // No usado en el fetch
-                        // const productPrice = this.dataset.productPrice; // No usado en el fetch
-                        // const productImage = this.dataset.productImage; // No usado en el fetch
-                        const quantity = 1; // Por ahora, siempre añade 1 unidad
+                        
+                        
+                        
+                        const quantity = 1; 
 
-                        // Deshabilitar el botón temporalmente
+                        
                         this.disabled = true;
                         this.textContent = 'Añadiendo...';
 
@@ -742,7 +742,7 @@
                         })
                         .then(data => {
                             console.log('Producto añadido:', data);
-                            // Actualizar el contador del carrito en el navbar
+                            
                             if (cartItemCountElement) cartItemCountElement.textContent = data.cartCount;
                             if (cartItemCountMobileElement) cartItemCountMobileElement.textContent = data.cartCount;
                             alert('Producto añadido al carrito correctamente!');
@@ -752,7 +752,7 @@
                             alert('Hubo un error al añadir el producto: ' + error.message);
                         })
                         .finally(() => {
-                            // Volver a habilitar el botón y restablecer su texto
+                            
                             this.disabled = false;
                             this.textContent = 'Añadir al Carrito';
                         });
@@ -761,32 +761,32 @@
             });
 
 
-            // --- CÓDIGO PARA OBTENER Y ENVIAR LA UBICACIÓN AUTOMÁTICAMENTE ---
+            
             function getUserLocationAndSendToServer() {
-                // Comprueba si el navegador soporta la API de Geolocation
+                
                 if (navigator.geolocation) {
                     console.log('Intentando obtener la ubicación del usuario...');
 
-                    // Opciones para la geolocalización
+                    
                     const options = {
-                        enableHighAccuracy: true, // Solicita la máxima precisión posible
-                        timeout: 5000,           // Tiempo máximo en ms para obtener la ubicación
-                        maximumAge: 0            // No usar una ubicación en caché
+                        enableHighAccuracy: true, 
+                        timeout: 5000,           
+                        maximumAge: 0            
                     };
 
-                    // Intenta obtener la posición actual del usuario
+                    
                     navigator.geolocation.getCurrentPosition(
                         (position) => {
-                            // Éxito: ubicación obtenida
+                            
                             const latitude = position.coords.latitude;
                             const longitude = position.coords.longitude;
                             console.log('Ubicación obtenida:', { latitude, longitude });
 
-                            // Envía esta ubicación al servidor
+                            
                             sendLocationToServer(latitude, longitude);
                         },
                         (error) => {
-                            // Error: el usuario denegó el permiso, o hubo un problema
+                            
                             let errorMessage;
                             switch(error.code) {
                                 case error.PERMISSION_DENIED:
@@ -803,18 +803,18 @@
                                     break;
                             }
                             console.warn('No se pudo obtener la ubicación:', errorMessage);
-                            // No mostramos nada al usuario en la interfaz, solo registramos el error en consola.
+                            
                         },
-                        options // Pasa las opciones a getCurrentPosition
+                        options 
                     );
                 } else {
                     console.warn('Tu navegador no soporta la Geolocation API. No se puede obtener la ubicación.');
                 }
             }
 
-            // Función para enviar la ubicación al servidor Laravel
+            
             function sendLocationToServer(latitude, longitude) {
-                // Esta ruta 'user.save_location' DEBE existir y estar protegida por 'auth' en routes/web.php
+                
                 fetch('{{ route('user.save_location') }}', {
                     method: 'POST',
                     headers: {
@@ -829,7 +829,7 @@
                 })
                 .then(response => {
                     if (!response.ok) {
-                        // Si la respuesta no es 2xx (ej. 401, 422, 500), intentar leer el mensaje de error del servidor
+                        
                         return response.json().then(err => {
                             console.error('Error al guardar la ubicación en el servidor (respuesta no OK):', err.message || 'Error desconocido del servidor.');
                             throw new Error(err.message || 'Error desconocido del servidor al guardar ubicación.');
@@ -839,17 +839,17 @@
                 })
                 .then(data => {
                     console.log('Ubicación guardada en el servidor:', data);
-                    // No hay alert ni mensaje visible al usuario
+                    
                 })
                 .catch(error => {
                     console.error('Error en la petición sendLocationToServer (catch):', error);
                 });
             }
 
-            // --- Llama a la función de obtención de ubicación automáticamente al cargar la página ---
+            
             getUserLocationAndSendToServer();
 
-        }); // Fin de document.addEventListener('DOMContentLoaded'
+        }); 
     </script>
 </body>
 </html>

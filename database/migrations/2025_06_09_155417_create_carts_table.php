@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('carts', function (Blueprint $table) {
             $table->id();
-            // 'user_id' será una clave foránea a la tabla 'users'
-            // Esto asegura que cada carrito pertenece a un usuario.
+            
+            
             $table->foreignId('user_id')->unique()->constrained()->onDelete('cascade');
-            $table->timestamps(); // created_at, updated_at
+            $table->timestamps(); 
         });
     }
 

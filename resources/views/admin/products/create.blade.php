@@ -128,8 +128,8 @@
             margin-top: 0.5rem;
         }
 
-        /* Removido: .file-input y sus estilos no son necesarios para URLs */
-        /* .file-input { ... } */
+        
+        
 
         
         .checkbox-container {
@@ -266,7 +266,7 @@
             .page-title {
                 font-size: 1.8rem;
             }
-            .form-input, .form-select, .form-textarea { /* .file-input removido */
+            .form-input, .form-select, .form-textarea { 
                 padding: 0.7rem 0.9rem;
             }
             .primary-button, .cancel-button {
@@ -316,7 +316,7 @@
             .form-label {
                 font-size: 0.9rem;
             }
-            .form-input, .form-select, .form-textarea { /* .file-input removido */
+            .form-input, .form-select, .form-textarea { 
                 font-size: 0.9rem;
                 padding: 0.6rem 0.8rem;
             }
@@ -327,17 +327,17 @@
                 font-size: 0.75rem;
                 padding: 0.7rem 0.9rem;
             }
-            /* Removido: .file-input::-webkit-file-upload-button y sus estilos */
+            
         }
     </style>
 </head>
 <body>
     <div class="card-container">
         <h2 class="page-title">
-            {{ __('Crear Nuevo Producto') }}
+            
         </h2>
 
-        {{-- Importante: se quita enctype="multipart/form-data" ya que no subiremos archivos --}}
+        
         <form method="POST" action="{{ route('admin.products.store') }}">
             @csrf
 
@@ -388,12 +388,12 @@
                 @enderror
             </div>
 
-            {{-- CAMBIO CLAVE AQUÍ: De input type="file" a input type="text" --}}
+            
             <div class="form-field">
                 <label for="image_path" class="form-label">{{ __('URL de la Imagen del Producto (Opcional)') }}</label>
-                {{-- Cambiado id y name a 'image_path' para consistencia con el campo en la BD --}}
+                
                 <input id="image_path" class="form-input" type="text" name="image_path" placeholder="https://ejemplo.com/tu-imagen.jpg" value="{{ old('image_path') }}">
-                {{-- Nota: El error para la validación de URL se mostraría aquí --}}
+                
                 @error('image_path')
                     <div class="validation-error">{{ $message }}</div>
                 @enderror

@@ -13,7 +13,7 @@ class Order extends Model
         'user_id',
         'total',
         'status',
-        // Otros campos relevantes para tu pedido
+        
     ];
 
     public function user()

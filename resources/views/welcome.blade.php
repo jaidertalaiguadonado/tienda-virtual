@@ -14,11 +14,7 @@
     @vite(['resources/js/app.js'])
 
 <style>
-    /*
-       IMPORTANTE: LO IDEAL ES MOVER ESTOS ESTILOS A UN ARCHIVO CSS SEPARADO (ej. resources/css/custom.css)
-       Y luego incluirlos en el layout principal de tu aplicación, o al menos en welcome.blade.php
-       y home.blade.php. Si los dejas aquí, asegúrate de copiarlos también a home.blade.php.
-    */
+    
     :root {
         --primary-color: #007BFF;
         --primary-light: #66B2FF;

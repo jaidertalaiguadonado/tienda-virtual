@@ -10,9 +10,9 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade'); // Clave foránea al usuario
-            $table->decimal('total', 10, 2); // Total del pedido
-            $table->string('status')->default('pending'); // Estado del pedido (pending, processing, completed, cancelled)
+            $table->foreignId('user_id')->constrained()->onDelete('cascade'); 
+            $table->decimal('total', 10, 2); 
+            $table->string('status')->default('pending'); 
             $table->timestamps();
         });
     }

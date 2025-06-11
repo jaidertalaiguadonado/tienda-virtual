@@ -14,7 +14,7 @@ class Location extends Model
         'address',
         'latitude',
         'longitude',
-        // Otros campos de ubicación
+        
     ];
 
     public function user()
