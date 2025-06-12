@@ -28,6 +28,7 @@ class MercadoPagoController extends Controller
         if (empty($accessToken)) {
             \Log::critical('Mercado Pago Access Token no configurado o es nulo. Verifique su .env y config/services.php');
             // En un entorno de producción, podrías querer lanzar una excepción aquí.
+            // throw new \Exception('Mercado Pago Access Token no configurado.');
         } else {
             MercadoPagoConfig::setAccessToken($accessToken);
         }
@@ -56,13 +57,22 @@ class MercadoPagoController extends Controller
 
         if (Auth::check()) {
             $user = Auth::user();
-            $cart = $user->cart()->with('items.product')->first(); // No firstOrCreate aquí, ya debería existir
-            if ($cart) {
-                foreach ($cart->items as $item) {
+            // Ya no usamos firstOrCreate aquí, el carrito debe existir para pagar
+            $cart = $user->cart()->with('items.product')->first();
+            if (!$cart) {
+                return back()->with('error', 'Tu carrito no existe o está vacío.');
+            }
+
+            foreach ($cart->items as $item) {
+                if ($item->product) { // Asegurarse de que el producto exista
                     $subtotal_products_only += $item->quantity * $item->product->price;
+                } else {
+                    \Log::warning('Producto asociado a cart item ' . $item->id . ' no encontrado.');
+                    // Considerar limpiar el item del carrito si el producto no existe
+                    $item->delete();
                 }
             }
-            $formattedCartItems = $cart ? $cart->items->map(function($item) {
+            $formattedCartItems = $cart->items->filter(fn($item) => $item->product)->map(function($item) {
                 return [
                     'id' => $item->product_id, // Usamos product_id para Mercado Pago item ID
                     'title' => $item->product->name,
@@ -72,7 +82,7 @@ class MercadoPagoController extends Controller
                     'currency_id' => "COP",
                     'picture_url' => $item->product->image_url ?? asset('images/default_product.png'),
                 ];
-            }) : collect();
+            });
 
         } else {
             $sessionCart = Session::get('cart', []);
@@ -99,7 +109,7 @@ class MercadoPagoController extends Controller
             return back()->with('error', 'Tu carrito está vacío. No se puede proceder con el pago.');
         }
 
-        // 2. Calcular los totales finales para la preferencia
+        // 2. Calcular los totales finales para la preferencia usando el método del CartController
         $totals = $this->cartController->calculateCartTotals($subtotal_products_only);
         $final_total_to_pay = $totals['final_total'];
 
@@ -119,14 +129,17 @@ class MercadoPagoController extends Controller
                     "pending" => route('mercadopago.pending')
                 ],
                 "auto_return" => "approved",
+                // Asegúrate de que esta URL sea accesible públicamente por Mercado Pago
                 "notification_url" => route('mercadopago.webhook') . '?source_news=webhooks',
-                "external_reference" => 'ORDER-' . uniqid(), // Generar una nueva referencia única aquí
-                "statement_descriptor" => "TIENDAJD",
+                "external_reference" => 'ORDER-' . uniqid(), // Generar una nueva referencia única aquí para tu orden
+                "statement_descriptor" => "TIENDAJD", // Lo que verá el cliente en su extracto bancario
                 "payer" => [
-                    "email" => Auth::check() ? Auth::user()->email : 'invitado@example.com', // Usar el email del usuario o un placeholder para invitados
-                    // Agrega más datos del pagador si los tienes (nombre, apellido, teléfono, etc.)
+                    "email" => Auth::check() ? Auth::user()->email : 'invitado@ejemplo.com', // Usar el email del usuario o un placeholder para invitados
+                    // Puedes añadir más datos del pagador si los tienes y los necesitas:
                     // "name" => Auth::check() ? Auth::user()->name : null,
                     // "surname" => Auth::check() ? Auth::user()->last_name : null,
+                    // "phone" => ["area_code" => "57", "number" => "3001234567"], // Ejemplo
+                    // "identification" => ["type" => "CC", "number" => "123456789"], // Ejemplo
                 ],
                 // El transaction_amount se calcula automáticamente si envías los items,
                 // pero puedes forzarlo si lo necesitas y si los items individuales lo justifican.
@@ -178,6 +191,7 @@ class MercadoPagoController extends Controller
         $paymentId = $request->query('payment_id');
         $externalReference = $request->query('external_reference');
         \Log::info('Mercado Pago Success Callback:', $request->all());
+        // Aquí podrías actualizar el estado de la orden en tu DB
         return view('mercadopago.success', compact('paymentId', 'externalReference'))->with('message', '¡Gracias por tu compra! Tu pago ha sido recibido y está siendo procesado.');
     }
 
@@ -186,6 +200,7 @@ class MercadoPagoController extends Controller
         $paymentId = $request->query('payment_id');
         $externalReference = $request->query('external_reference');
         \Log::info('Mercado Pago Failure Callback:', $request->all());
+        // Aquí podrías actualizar el estado de la orden en tu DB
         return view('mercadopago.failure', compact('paymentId', 'externalReference'))->with('message', 'Lo sentimos, tu pago no pudo ser procesado. Por favor, inténtalo de nuevo.');
     }
 
@@ -194,6 +209,7 @@ class MercadoPagoController extends Controller
         $paymentId = $request->query('payment_id');
         $externalReference = $request->query('external_reference');
         \Log::info('Mercado Pago Pending Callback:', $request->all());
+        // Aquí podrías actualizar el estado de la orden en tu DB
         return view('mercadopago.pending', compact('paymentId', 'externalReference'))->with('message', 'Tu pago está pendiente de confirmación. Te notificaremos cuando se apruebe.');
     }
 
@@ -205,14 +221,10 @@ class MercadoPagoController extends Controller
         \Log::info('Webhook de Mercado Pago recibido:', $request->all());
 
         // Siempre devuelve un 200 OK a Mercado Pago rápidamente
-        // Mover la lógica de procesamiento real a una cola o Job si es compleja
+        // La lógica de procesamiento compleja debe ir en un Job o ejecutarse después del return
+        // para evitar que Mercado Pago reintente el webhook.
+        // Si el procesamiento es ligero, puedes dejarlo aquí.
         if ($topic === 'payment' && !empty($id)) {
-            // Esto es crucial: devuelve el 200 OK inmediatamente ANTES de procesar
-            // para evitar reintentos de Mercado Pago.
-            // La lógica de procesamiento debe ir en un Job o al final del método
-            // después de asegurar la respuesta 200.
-            
-            // Si el procesamiento es rápido, puedes dejarlo aquí, pero si no, es mejor un Job.
             try {
                 $paymentClient = new PaymentClient();
                 $payment = $paymentClient->get($id);
@@ -225,10 +237,12 @@ class MercadoPagoController extends Controller
                     \Log::info("Webhook: Procesando pago MP ID: {$paymentId}, Estado: {$paymentStatus}, Ref Externa: {$externalReference}");
 
                     // === TU LÓGICA PARA ACTUALIZAR EL ESTADO DE LA ORDEN AQUÍ ===
-                    // $order = Order::where('external_reference', $externalReference)->first();
+                    // Busca la orden por external_reference y actualiza su estado y ID de pago MP
+                    // Por ejemplo:
+                    // $order = \App\Models\Order::where('external_reference', $externalReference)->first();
                     // if ($order) {
                     //      $order->mp_payment_id = $paymentId;
-                    //      $order->status = $this->mapMercadoPagoStatusToOrderStatus($paymentStatus);
+                    //      $order->status = $this->mapMercadoPagoStatusToOrderStatus($paymentStatus); // Implementa esta función
                     //      $order->save();
                     //      \Log::info("Orden {$order->id} actualizada a estado: {$order->status}");
                     // } else {
@@ -257,11 +271,14 @@ class MercadoPagoController extends Controller
         return response()->json(['status' => 'ok'], 200); // Siempre devolver 200 OK
     }
 
+    // /**
+    //  * Mapea el estado de pago de Mercado Pago a tu propio estado de orden.
+    //  */
     // private function mapMercadoPagoStatusToOrderStatus(string $mpStatus): string
     // {
     //      switch ($mpStatus) {
     //          case 'approved':
-    //              return 'paid';
+    //              return 'paid'; // O 'completed', 'processing'
     //          case 'pending':
     //              return 'pending_payment';
     //          case 'rejected':
