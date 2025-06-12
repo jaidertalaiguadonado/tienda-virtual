@@ -122,9 +122,8 @@
             </thead>
             <tbody id="cart-items-body">
                 @foreach($cartItems as $item)
-                    <tr data-id="{{ $item['id'] }}">
+                    <tr data-id="{{ $item['id'] }}"> {{-- data-id es el ID del CartItem (logueado) o product_id (invitado) --}}
                         <td>
-                            {{-- ¡CORRECCIÓN CLAVE AQUÍ! Usar 'image_url' --}}
                             <img src="{{ asset($item['image_url']) }}" alt="{{ $item['name'] }}" width="50">
                             {{ $item['name'] }}
                         </td>
@@ -149,7 +148,6 @@
         {{-- El resumen del carrito se mostrará/ocultará con JavaScript --}}
         <div class="cart-summary" style="display: {{ empty($cartItems) ? 'none' : 'flex' }};">
             <p>Subtotal Productos (sin IVA): $<span id="subtotal_net_products">{{ number_format($subtotal_net_products, 2, ',', '.') }}</span></p>
-            {{-- Usamos la constante de la clase CartController --}}
             <p>IVA Productos ({{ \App\Http\Controllers\CartController::IVA_RATE * 100 }}%): $<span id="iva_products_amount">{{ number_format($iva_products_amount, 2, ',', '.') }}</span></p>
             <p>Subtotal Productos (con IVA): $<span id="subtotal_gross_products">{{ number_format($subtotal_gross_products, 2, ',', '.') }}</span></p>
             <p>Comisión Mercado Pago: $<span id="mp_fee_amount">{{ number_format($mp_fee_amount, 2, ',', '.') }}</span></p>
@@ -299,6 +297,10 @@
                         itemQuantityInput.value = data.item.quantity;
                     }
                 }
+                // Si el carrito está vacío y la tabla se oculta, también limpiar el tbody
+                if (cartIsEmpty && cartItemsBody) {
+                    cartItemsBody.innerHTML = '';
+                }
             }
             
             // Función para enviar peticiones AJAX (generalizada)
@@ -316,6 +318,7 @@
 
                     if (!response.ok) {
                         const errorData = await response.json();
+                        // Mostrar mensaje de error del backend si hay un status 'error'
                         alert(errorData.message || 'Error en la petición.');
                         return;
                     }
@@ -327,7 +330,10 @@
                     updateCartUI(responseData);
 
                     // Lógica para eliminar la fila si la cantidad es 0 o se eliminó
-                    if (payloadData.quantity === 0 || method === 'POST' && url.includes('/remove')) {
+                    // Ahora se basa en el 'cartCount' en la respuesta, y si el item específico fue eliminado.
+                    if (responseData.cartCount === 0 || (responseData.item && responseData.item.quantity === 0)) {
+                        // Si el carrito está vacío, updateCartUI ya lo maneja.
+                        // Si un item específico fue eliminado (cantidad 0), remover su fila.
                         const rowToRemove = document.querySelector(`tr[data-id="${payloadData.id}"]`);
                         if (rowToRemove) {
                             rowToRemove.remove();
@@ -346,7 +352,8 @@
             if (cartItemsBody) {
                 cartItemsBody.addEventListener('click', function(event) {
                     const target = event.target;
-                    const itemId = target.closest('tr')?.dataset.id; // Obtener el data-id de la fila más cercana
+                    // Obtener el data-id de la fila más cercana (que es el ID del CartItem o product_id)
+                    const itemId = target.closest('tr')?.dataset.id; 
 
                     if (!itemId) return; 
 
@@ -360,15 +367,16 @@
                             newQuantity--;
                         }
 
-                        if (newQuantity < 0) newQuantity = 0; // Evitar cantidades negativas, manejar eliminación
+                        // No permitir cantidades negativas, si es < 0, se procesa como 0 (eliminar)
+                        if (newQuantity < 0) newQuantity = 0; 
 
-                        sendCartRequest('{{ route('cart.update') }}', 'POST', { product_id: itemId, quantity: newQuantity }); // Asegúrate de enviar product_id
+                        sendCartRequest('{{ route('cart.update') }}', 'POST', { id: itemId, quantity: newQuantity });
                     }
                     
                     if (target.classList.contains('remove-item')) {
-                        if (confirm('¿Estás seguro de que quieres eliminar este producto del carrito?')) {
-                            sendCartRequest('{{ route('cart.remove') }}', 'POST', { product_id: itemId }); // Asegúrate de enviar product_id
-                        }
+                        // No usar confirm() directamente. Si necesitas confirmación, usa un modal.
+                        // Por ahora, solo envía la petición. El backend maneja el resultado.
+                        sendCartRequest('{{ route('cart.remove') }}', 'POST', { id: itemId });
                     }
                 });
                 
@@ -380,16 +388,15 @@
 
                         if (isNaN(newQuantity) || newQuantity < 0) {
                             newQuantity = 1; 
-                            target.value = 1;
+                            target.value = 1; // Revertir el valor en el input
                         }
 
+                        // Si la cantidad cambia a 0, se procesa como eliminación
                         if (newQuantity === 0) {
-                            if (!confirm('¿Estás seguro de que quieres eliminar este producto del carrito?')) {
-                                target.value = 1; 
-                                return;
-                            }
+                            // No usar confirm() directamente. Si necesitas confirmación, usa un modal.
+                            // Por ahora, solo envía la petición. El backend maneja el resultado.
                         }
-                        sendCartRequest('{{ route('cart.update') }}', 'POST', { product_id: itemId, quantity: newQuantity }); // Asegúrate de enviar product_id
+                        sendCartRequest('{{ route('cart.update') }}', 'POST', { id: itemId, quantity: newQuantity });
                     }
                 });
             }
@@ -397,7 +404,7 @@
             // Inicializar la UI con los datos que vienen del servidor (al cargar la página)
             // Aseguramos que los valores sean números.
             updateCartUI({
-                cartItems: @json($cartItems), // Pasa los ítems para la lógica de vacío
+                cartItems: @json($cartItems),
                 subtotal_net_products: parseFloat({{ $subtotal_net_products }}),
                 iva_products_amount: parseFloat({{ $iva_products_amount }}),
                 subtotal_gross_products: parseFloat({{ $subtotal_gross_products }}),
