@@ -60,7 +60,7 @@ class CartController extends Controller
         } else {
             $sessionCart = Session::get('cart', []);
             $found = false;
-            foreach ($sessionCart as $key => $item) {
+            foreach ($sessionCart as $key => &$item) { // Usar & para modificar el array directamente
                 if ($item['id'] == $productId) {
                     $sessionCart[$key]['quantity'] += $quantity;
                     $found = true;
@@ -72,7 +72,7 @@ class CartController extends Controller
                     'id' => $productId,
                     'name' => $product->name,
                     'price' => $product->price, // Precio del producto
-                    'image' => $product->image_url,
+                    'image_url' => $product->image_url, // Corregido a 'image_url' para consistencia
                     'quantity' => $quantity
                 ];
             }
@@ -86,16 +86,24 @@ class CartController extends Controller
      * Actualiza la cantidad de un producto en el carrito.
      *
      * @param Request $request
-     * @return \Illuminate\Http\RedirectResponse
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request)
     {
         $productId = $request->input('product_id');
         $quantity = $request->input('quantity');
 
-        if ($quantity <= 0) {
-            return $this->remove($request);
+        // Validar cantidad
+        if (!is_numeric($quantity) || $quantity < 0) {
+            return response()->json(['message' => 'Cantidad inválida.'], 400);
         }
+
+        // Si la cantidad es 0, llamamos al método remove
+        if ($quantity == 0) {
+            return $this->remove($request); // Remove ya devuelve JSON
+        }
+
+        $cartItem = null; // Para almacenar el item actualizado si existe
 
         if (Auth::check()) {
             $user = Auth::user();
@@ -105,47 +113,90 @@ class CartController extends Controller
                 if ($cartItem) {
                     $cartItem->quantity = $quantity;
                     $cartItem->save();
+                } else {
+                    return response()->json(['message' => 'Producto no encontrado en el carrito del usuario.'], 404);
                 }
+            } else {
+                 return response()->json(['message' => 'Carrito no encontrado para el usuario.'], 404);
             }
-        } else {
+        } else { // Carrito de invitado
             $sessionCart = Session::get('cart', []);
-            foreach ($sessionCart as $key => $item) {
+            $updated = false;
+            foreach ($sessionCart as $key => &$item) {
                 if ($item['id'] == $productId) {
-                    $sessionCart[$key]['quantity'] = $quantity;
+                    $item['quantity'] = $quantity;
+                    $updated = true;
                     break;
                 }
             }
             Session::put('cart', $sessionCart);
+
+            if (!$updated) {
+                return response()->json(['message' => 'Producto no encontrado en el carrito de sesión.'], 404);
+            }
         }
 
-        return redirect()->back()->with('success', 'Cantidad actualizada.');
+        // Recalcular y devolver los nuevos totales
+        $formattedCartItems = $this->getFormattedCartItems();
+        $cartTotals = $this->calculateCartTotals($formattedCartItems);
+
+        // Buscar el item que se acaba de actualizar para devolverlo en la respuesta
+        $updatedFormattedItem = null;
+        foreach ($formattedCartItems as $item) {
+            if ($item['product_id'] == $productId) { // Asegúrate de usar 'product_id' aquí
+                $updatedFormattedItem = $item;
+                break;
+            }
+        }
+
+        return response()->json(array_merge($cartTotals, [
+            'message' => 'Cantidad actualizada.',
+            'cartCount' => count($formattedCartItems),
+            'item' => $updatedFormattedItem // Devolver el item actualizado para reflejar cambios en la UI
+        ]));
     }
 
     /**
      * Elimina un producto del carrito.
      *
      * @param Request $request
-     * @return \Illuminate\Http\RedirectResponse
+     * @return \Illuminate\Http\JsonResponse
      */
     public function remove(Request $request)
     {
         $productId = $request->input('product_id');
 
+        $deleted = false;
         if (Auth::check()) {
             $user = Auth::user();
             $cart = $user->cart;
             if ($cart) {
-                $cart->cartItems()->where('product_id', $productId)->delete();
+                $deleted = $cart->cartItems()->where('product_id', $productId)->delete();
             }
         } else {
             $sessionCart = Session::get('cart', []);
+            $initialCount = count($sessionCart);
             $sessionCart = array_filter($sessionCart, function ($item) use ($productId) {
                 return $item['id'] != $productId;
             });
+            // Reindexar el array para evitar problemas con las claves
+            $sessionCart = array_values($sessionCart);
             Session::put('cart', $sessionCart);
+            $deleted = (count($sessionCart) < $initialCount);
         }
 
-        return redirect()->back()->with('success', 'Producto eliminado del carrito.');
+        if (!$deleted) {
+            return response()->json(['message' => 'Producto no encontrado en el carrito para eliminar.', 'status' => 'error'], 404);
+        }
+
+        // Recalcular y devolver los nuevos totales
+        $formattedCartItems = $this->getFormattedCartItems();
+        $cartTotals = $this->calculateCartTotals($formattedCartItems);
+
+        return response()->json(array_merge($cartTotals, [
+            'message' => 'Producto eliminado del carrito.',
+            'cartCount' => count($formattedCartItems)
+        ]));
     }
 
     /**
@@ -166,7 +217,7 @@ class CartController extends Controller
             $sessionCart = Session::get('cart', []);
             $count = count($sessionCart);
         }
-        return response()->json(['count' => $count]);
+        return response()->json(['cartCount' => $count]); // Cambiado 'count' a 'cartCount' para consistencia con JS
     }
 
     /**
@@ -180,7 +231,7 @@ class CartController extends Controller
 
         if (Auth::check()) {
             $user = Auth::user();
-            $cart = $user->cart()->with('cartItems.product')->first(); // Carga la relación 'cartItems'
+            $cart = $user->cart()->with('cartItems.product')->first();
             if ($cart && $cart->cartItems) {
                 foreach ($cart->cartItems as $cartItem) {
                     if ($cartItem->product) {
@@ -189,8 +240,8 @@ class CartController extends Controller
                         $subtotalGross = round($subtotalNet * (1 + self::IVA_RATE), 2);
 
                         $formattedItems[] = [
-                            'id' => $cartItem->id,
-                            'product_id' => $cartItem->product_id,
+                            'id' => $cartItem->id, // Este es el ID de CartItem, no el product_id
+                            'product_id' => $cartItem->product_id, // Añadimos product_id
                             'name' => $cartItem->product->name,
                             'quantity' => $cartItem->quantity,
                             'price_net' => $priceNet,
@@ -199,24 +250,26 @@ class CartController extends Controller
                             'image_url' => $cartItem->product->image_url,
                         ];
                     } else {
-                        // Opcional: limpiar ítems huérfanos o loguear
-                        \Log::warning("CartItem {$cartItem->id} tiene un product_id inválido.");
+                        // Loguear y eliminar ítems huérfanos
+                        \Log::warning("CartItem {$cartItem->id} tiene un product_id inválido o producto no encontrado. Eliminando.");
                         $cartItem->delete();
                     }
                 }
             }
         } else {
             $sessionCart = Session::get('cart', []);
+            // Limpiar la sesión de ítems inválidos si el producto ya no existe
+            $validSessionCart = [];
             foreach ($sessionCart as $item) {
-                $product = Product::find($item['id']);
+                $product = Product::find($item['id']); // 'id' en sesión es el product_id
                 if ($product) {
                     $priceNet = $product->price;
                     $subtotalNet = $item['quantity'] * $priceNet;
                     $subtotalGross = round($subtotalNet * (1 + self::IVA_RATE), 2);
 
-                    $formattedItems[] = [
-                        'id' => $item['id'], // En sesión, el 'id' es el product_id
-                        'product_id' => $item['id'],
+                    $validSessionCart[] = [
+                        'id' => $item['id'], // Para la UI y JS, mantenemos 'id' como product_id en sesión
+                        'product_id' => $item['id'], // También product_id para consistencia
                         'name' => $item['name'],
                         'quantity' => $item['quantity'],
                         'price_net' => $priceNet,
@@ -224,8 +277,15 @@ class CartController extends Controller
                         'subtotal_item_gross' => $subtotalGross,
                         'image_url' => $product->image_url,
                     ];
+                } else {
+                    \Log::warning("Producto con ID {$item['id']} en sesión no encontrado. Eliminando del carrito de sesión.");
                 }
             }
+            // Si se eliminaron ítems inválidos, actualizar la sesión
+            if (count($validSessionCart) !== count($sessionCart)) {
+                Session::put('cart', $validSessionCart);
+            }
+            $formattedItems = $validSessionCart;
         }
 
         return $formattedItems;
@@ -237,7 +297,7 @@ class CartController extends Controller
      * @param array $cartItems // Este es el array de ítems formateados que espera
      * @return array
      */
-    public function calculateCartTotals(array $cartItems) // <--- CAMBIADO A 'public'
+    public function calculateCartTotals(array $cartItems)
     {
         $subtotal_net_products = 0;
         $subtotal_gross_products = 0;
@@ -247,15 +307,17 @@ class CartController extends Controller
             $subtotal_gross_products += $item['subtotal_item_gross'];
         }
 
-        $iva_products_amount = round($subtotal_gross_products - ($subtotal_gross_products / (1 + self::IVA_RATE)), 2); // Redondeo aquí
+        $iva_products_amount = round($subtotal_gross_products - ($subtotal_gross_products / (1 + self::IVA_RATE)), 2);
 
         $commission_percent_value = $subtotal_gross_products * self::MP_COMMISSION_PERCENTAGE;
-        $iva_on_commission_percent = $commission_percent_value * self::IVA_RATE;
+        // La cuota fija de MP generalmente no lleva IVA adicional, pero el porcentaje sí.
+        $iva_on_commission_percent = $commission_percent_value * self::IVA_RATE; 
         $mp_fee_amount = round(($commission_percent_value + $iva_on_commission_percent) + self::MP_FIXED_FEE, 2);
 
         $final_total = round($subtotal_gross_products + $mp_fee_amount, 2);
 
-        $cartCount = $this->getCartItemCount()->original['count']; // Obtener el valor del JSON response
+        // Aquí ya tienes cartItems, puedes calcular el conteo directamente
+        $cartCount = count($cartItems); 
 
         return [
             'cartItems' => $cartItems,
