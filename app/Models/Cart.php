@@ -21,8 +21,9 @@ class Cart extends Model
 
     /**
      * Un carrito tiene muchos ítems.
+     * CAMBIADO DE 'items' A 'cartItems' PARA COINCIDIR CON EL CONTROLADOR
      */
-    public function items()
+    public function cartItems() // <-- ¡CAMBIADO AQUÍ!
     {
         return $this->hasMany(CartItem::class);
     }
@@ -32,7 +33,8 @@ class Cart extends Model
      */
     public function getTotalAttribute()
     {
-        return $this->items->sum(function($item) {
+        // Asegúrate de usar la relación correcta si usas 'items()' en otros lugares
+        return $this->cartItems->sum(function($item) { // <-- Posiblemente también aquí
             return $item->quantity * $item->price_at_addition;
         });
     }
@@ -42,7 +44,8 @@ class Cart extends Model
      */
     public function getCountAttribute()
     {
-        return $this->items->count();
+        // Asegúrate de usar la relación correcta si usas 'items()' en otros lugares
+        return $this->cartItems->count(); // <-- Posiblemente también aquí
     }
 
     /**
@@ -50,6 +53,7 @@ class Cart extends Model
      */
     public function getTotalQuantityAttribute()
     {
-        return $this->items->sum('quantity');
+        // Asegúrate de usar la relación correcta si usas 'items()' en otros lugares
+        return $this->cartItems->sum('quantity'); // <-- Posiblemente también aquí
     }
 }
