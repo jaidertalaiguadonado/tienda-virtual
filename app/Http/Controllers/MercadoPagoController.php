@@ -7,22 +7,27 @@ use MercadoPago\Client\Preference\PreferenceClient;
 use MercadoPago\MercadoPagoConfig;
 use MercadoPago\Client\Payment\PaymentClient;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth; // Necesario para Auth::user()
+use Illuminate\Support\Facades\Session; // Necesario para Session::get()
+use App\Models\Product; // Asegurarse de que este modelo esté importado para los productos en sesión
 
 class MercadoPagoController extends Controller
 {
+    protected $cartController;
+
     /**
      * Constructor para inicializar el SDK de Mercado Pago.
-     * El access token se obtiene de la configuración de servicios.
+     * Inyecta el CartController.
      */
-    public function __construct()
+    public function __construct(CartController $cartController)
     {
+        $this->cartController = $cartController;
+
         $accessToken = config('services.mercadopago.access_token');
 
         if (empty($accessToken)) {
-            // Esto es un error crítico; en producción, el token nunca debería ser nulo.
             \Log::critical('Mercado Pago Access Token no configurado o es nulo. Verifique su .env y config/services.php');
-            // Opcionalmente, puedes lanzar una excepción para detener la aplicación si el token es vital.
-            // throw new \Exception('Mercado Pago Access Token no configurado.');
+            // En un entorno de producción, podrías querer lanzar una excepción aquí.
         } else {
             MercadoPagoConfig::setAccessToken($accessToken);
         }
@@ -36,36 +41,102 @@ class MercadoPagoController extends Controller
      */
     public function createPaymentPreference(Request $request)
     {
-        $request->validate([
-            'total_amount' => 'required|numeric|min:1',
-            'description' => 'required|string|max:255',
-        ]);
+        // NO VALIDAR total_amount aquí, se obtendrá del carrito
+        // La validación de stock y cantidad ya se hizo en el CartController
+        // $request->validate([
+        //     'total_amount' => 'required|numeric|min:1',
+        //     'description' => 'required|string|max:255',
+        // ]);
 
-        $amount = $request->input('total_amount');
-        $description = $request->input('description');
-        $externalReference = 'ORDER-' . uniqid(); // Referencia única para tu orden
+        // 1. Obtener los ítems y totales calculados por el CartController
+        // Simulamos la lógica de show() para obtener los datos más recientes del carrito
+        $cart = null;
+        $subtotal_products_only = 0; // Este será el 'subtotal' de los productos, asumiendo que incluye IVA.
+        $formattedCartItems = collect();
+
+        if (Auth::check()) {
+            $user = Auth::user();
+            $cart = $user->cart()->with('items.product')->first(); // No firstOrCreate aquí, ya debería existir
+            if ($cart) {
+                foreach ($cart->items as $item) {
+                    $subtotal_products_only += $item->quantity * $item->product->price;
+                }
+            }
+            $formattedCartItems = $cart ? $cart->items->map(function($item) {
+                return [
+                    'id' => $item->product_id, // Usamos product_id para Mercado Pago item ID
+                    'title' => $item->product->name,
+                    'description' => Str::limit($item->product->description ?? $item->product->name, 250), // Breve descripción
+                    'quantity' => $item->quantity,
+                    'unit_price' => (float) round($item->product->price, 2), // Precio unitario del producto, redondeado
+                    'currency_id' => "COP",
+                    'picture_url' => $item->product->image_url ?? asset('images/default_product.png'),
+                ];
+            }) : collect();
+
+        } else {
+            $sessionCart = Session::get('cart', []);
+            $formattedCartItems = collect($sessionCart)->map(function($item) {
+                // Para invitados, item['id'] ya es el product_id
+                $product = Product::find($item['id']); // Obtener el producto para detalles actualizados
+                $price = $product ? $product->price : $item['price']; // Usar precio actual si el producto existe
+                return [
+                    'id' => $item['id'], // product_id
+                    'title' => $item['name'],
+                    'description' => Str::limit($product->description ?? $item['name'], 250),
+                    'quantity' => $item['quantity'],
+                    'unit_price' => (float) round($price, 2),
+                    'currency_id' => "COP",
+                    'picture_url' => $item['image'] ?? asset('images/default_product.png'),
+                ];
+            });
+            $subtotal_products_only = $formattedCartItems->sum(function($item) {
+                return $item['quantity'] * $item['unit_price'];
+            });
+        }
+
+        if ($formattedCartItems->isEmpty()) {
+            return back()->with('error', 'Tu carrito está vacío. No se puede proceder con el pago.');
+        }
+
+        // 2. Calcular los totales finales para la preferencia
+        $totals = $this->cartController->calculateCartTotals($subtotal_products_only);
+        $final_total_to_pay = $totals['final_total'];
+
+        // Asegurarse de que el monto sea válido
+        if ($final_total_to_pay <= 0) {
+            \Log::error('Intento de crear preferencia con monto total <= 0: ' . $final_total_to_pay);
+            return back()->with('error', 'El monto total a pagar debe ser positivo.');
+        }
 
         $preferenceClient = new PreferenceClient();
         try {
-            $response = $preferenceClient->create([
-                "items" => [
-                    [
-                        "title" => $description,
-                        "quantity" => 1,
-                        "unit_price" => (float) $amount,
-                        "currency_id" => "COP" // Moneda de Colombia
-                    ]
-                ],
+            $preferenceData = [
+                "items" => $formattedCartItems->toArray(), // Pasar el array de ítems formateado
                 "back_urls" => [
                     "success" => route('mercadopago.success'),
                     "failure" => route('mercadopago.failure'),
                     "pending" => route('mercadopago.pending')
                 ],
-                "auto_return" => "approved", // Redirige automáticamente al éxito
+                "auto_return" => "approved",
                 "notification_url" => route('mercadopago.webhook') . '?source_news=webhooks',
-                "external_reference" => $externalReference,
-                "statement_descriptor" => "TIENDAJD", // Descriptor en el extracto de tarjeta
-            ]);
+                "external_reference" => 'ORDER-' . uniqid(), // Generar una nueva referencia única aquí
+                "statement_descriptor" => "TIENDAJD",
+                "payer" => [
+                    "email" => Auth::check() ? Auth::user()->email : 'invitado@example.com', // Usar el email del usuario o un placeholder para invitados
+                    // Agrega más datos del pagador si los tienes (nombre, apellido, teléfono, etc.)
+                    // "name" => Auth::check() ? Auth::user()->name : null,
+                    // "surname" => Auth::check() ? Auth::user()->last_name : null,
+                ],
+                // El transaction_amount se calcula automáticamente si envías los items,
+                // pero puedes forzarlo si lo necesitas y si los items individuales lo justifican.
+                "transaction_amount" => (float) $final_total_to_pay,
+            ];
+
+            // Opcional: Loguear el payload de la preferencia antes de enviarlo
+            \Log::info('Mercado Pago Preference Payload:', $preferenceData);
+
+            $response = $preferenceClient->create($preferenceData);
 
             // Redirige al usuario al init_point de Mercado Pago
             return redirect()->away($response->init_point);
@@ -97,7 +168,7 @@ class MercadoPagoController extends Controller
             return back()->with('error', $userMessage);
 
         } catch (\Exception $e) {
-            \Log::error('Error general al crear preferencia de pago: ' . $e->getMessage());
+            \Log::error('Error general al crear preferencia de pago: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return back()->with('error', 'Error interno al procesar el pago. Por favor, intenta de nuevo.');
         }
     }
@@ -134,9 +205,14 @@ class MercadoPagoController extends Controller
         \Log::info('Webhook de Mercado Pago recibido:', $request->all());
 
         // Siempre devuelve un 200 OK a Mercado Pago rápidamente
-        return response()->json(['status' => 'ok'], 200);
-
-        if ($topic === 'payment') {
+        // Mover la lógica de procesamiento real a una cola o Job si es compleja
+        if ($topic === 'payment' && !empty($id)) {
+            // Esto es crucial: devuelve el 200 OK inmediatamente ANTES de procesar
+            // para evitar reintentos de Mercado Pago.
+            // La lógica de procesamiento debe ir en un Job o al final del método
+            // después de asegurar la respuesta 200.
+            
+            // Si el procesamiento es rápido, puedes dejarlo aquí, pero si no, es mejor un Job.
             try {
                 $paymentClient = new PaymentClient();
                 $payment = $paymentClient->get($id);
@@ -151,12 +227,12 @@ class MercadoPagoController extends Controller
                     // === TU LÓGICA PARA ACTUALIZAR EL ESTADO DE LA ORDEN AQUÍ ===
                     // $order = Order::where('external_reference', $externalReference)->first();
                     // if ($order) {
-                    //     $order->mp_payment_id = $paymentId;
-                    //     $order->status = $this->mapMercadoPagoStatusToOrderStatus($paymentStatus);
-                    //     $order->save();
-                    //     \Log::info("Orden {$order->id} actualizada a estado: {$order->status}");
+                    //      $order->mp_payment_id = $paymentId;
+                    //      $order->status = $this->mapMercadoPagoStatusToOrderStatus($paymentStatus);
+                    //      $order->save();
+                    //      \Log::info("Orden {$order->id} actualizada a estado: {$order->status}");
                     // } else {
-                    //     \Log::warning("Webhook: Orden no encontrada para referencia externa: {$externalReference}");
+                    //      \Log::warning("Webhook: Orden no encontrada para referencia externa: {$externalReference}");
                     // }
 
                 } else {
@@ -178,24 +254,25 @@ class MercadoPagoController extends Controller
                 \Log::error('Error general en Webhook al procesar: ' . $e->getMessage());
             }
         }
+        return response()->json(['status' => 'ok'], 200); // Siempre devolver 200 OK
     }
 
     // private function mapMercadoPagoStatusToOrderStatus(string $mpStatus): string
     // {
-    //     switch ($mpStatus) {
-    //         case 'approved':
-    //             return 'paid';
-    //         case 'pending':
-    //             return 'pending_payment';
-    //         case 'rejected':
-    //         case 'cancelled':
-    //             return 'cancelled';
-    //         case 'refunded':
-    //             return 'refunded';
-    //         case 'charged_back':
-    //             return 'charged_back';
-    //         default:
-    //             return 'unknown';
-    //     }
+    //      switch ($mpStatus) {
+    //          case 'approved':
+    //              return 'paid';
+    //          case 'pending':
+    //              return 'pending_payment';
+    //          case 'rejected':
+    //          case 'cancelled':
+    //              return 'cancelled';
+    //          case 'refunded':
+    //              return 'refunded';
+    //          case 'charged_back':
+    //              return 'charged_back';
+    //          default:
+    //              return 'unknown';
+    //      }
     // }
 }
