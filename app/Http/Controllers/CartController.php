@@ -46,7 +46,7 @@ class CartController extends Controller
                 return [
                     'id' => $item->id,
                     'product_id' => $item->product_id,
-                    'name' => $item->product->name ?? 'Producto Desconocido',
+                    'name' => $item->product->name ?? 'Producto Desconocido', // Asegurar que el nombre exista
                     'price_net' => $productPriceNet,
                     'price_gross' => $productPriceGross,
                     'quantity' => $item->quantity,
@@ -60,13 +60,14 @@ class CartController extends Controller
             $sessionCart = Session::get('cart', []);
             $formattedCartItems = collect($sessionCart)->map(function($item) {
                 $product = Product::find($item['id']);
-                $productPriceNet = $product ? $product->price : $item['price']; // Asumiendo que item['price'] también es neto si no hay producto
+                // AGREGADO: Usar ?? 0 para manejar si 'price' no existe en la sesión
+                $productPriceNet = $product ? $product->price : ($item['price'] ?? 0); 
                 $productPriceGross = round($productPriceNet * (1 + $this->ivaRate), 2);
 
                 return [
                     'id' => $item['id'],
                     'product_id' => $item['id'],
-                    'name' => $item['name'],
+                    'name' => $item['name'] ?? 'Producto Desconocido', // AGREGADO: Asegurar que el nombre exista
                     'price_net' => $productPriceNet,
                     'price_gross' => $productPriceGross,
                     'quantity' => $item['quantity'],
@@ -153,21 +154,23 @@ class CartController extends Controller
                     return response()->json(['message' => 'Stock insuficiente para la cantidad solicitada.'], 400);
                 }
                 $sessionCart[$productId]['quantity'] = $currentTotalQuantity;
+                // AGREGADO: Asegurar que el precio se actualice y exista en la sesión
+                $sessionCart[$productId]['price'] = $product->price; 
+                $sessionCart[$productId]['subtotal_item'] = $product->price * $sessionCart[$productId]['quantity'];
             } else {
                 $sessionCart[$productId] = [
                     'id' => $productId,
                     'name' => $product->name,
-                    'price' => $product->price, // Guardamos el precio NETO
+                    'price' => $product->price, // AGREGADO: 'price' KEY IS SET
                     'image' => $product->image_url,
                     'quantity' => $quantity,
-                    // Subtotal item en sesión también será NETO
                     'subtotal_item' => $product->price * $quantity,
                 ];
             }
             Session::put('cart', $sessionCart);
 
             $currentSubtotalNet = array_sum(array_map(function($item) {
-                return $item['price'] * $item['quantity']; // Sumamos precios NETOS
+                return ($item['price'] ?? 0) * ($item['quantity'] ?? 0); // AGREGADO: Manejar si 'price' o 'quantity' no existen
             }, $sessionCart));
         }
 
@@ -283,7 +286,9 @@ class CartController extends Controller
             }
             Session::put('cart', $sessionCart);
 
-            $subtotal_products_only_NET = collect($sessionCart)->sum('subtotal_item');
+            $subtotal_products_only_NET = collect($sessionCart)->sum(function($item) {
+                return ($item['subtotal_item'] ?? (($item['price'] ?? 0) * ($item['quantity'] ?? 0))); // AGREGADO: Manejar si subtotal_item no existe
+            });
         }
 
         // Recalcular todos los totales con la lógica unificada
@@ -358,7 +363,9 @@ class CartController extends Controller
             }
             Session::put('cart', $sessionCart);
 
-            $subtotal_products_only_NET = collect($sessionCart)->sum('subtotal_item');
+            $subtotal_products_only_NET = collect($sessionCart)->sum(function($item) {
+                return ($item['subtotal_item'] ?? (($item['price'] ?? 0) * ($item['quantity'] ?? 0))); // AGREGADO
+            });
         }
 
         $totals = $this->calculateCartTotals($subtotal_products_only_NET);
