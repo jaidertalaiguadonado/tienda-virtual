@@ -11,13 +11,17 @@ use App\Models\Product;
 
 class CartController extends Controller
 {
+    // Define la tasa de IVA globalmente para consistencia
+    private $ivaRate = 0.19; // 19% IVA en Colombia
+
     /**
      * Muestra la página del carrito de compras.
      */
     public function show()
     {
         $cart = null;
-        $subtotal_products_only = 0;
+        // subtotal_products_only_NET será el subtotal de los productos SIN IVA
+        $subtotal_products_only_NET = 0;
         $formattedCartItems = collect();
 
         if (Auth::check()) {
@@ -27,7 +31,8 @@ class CartController extends Controller
             if ($cart) {
                 foreach ($cart->items as $item) {
                     if ($item->product) {
-                        $subtotal_products_only += $item->quantity * $item->product->price;
+                        // Usar el precio neto del producto de la DB
+                        $subtotal_products_only_NET += $item->quantity * $item->product->price;
                     } else {
                         \Log::warning('Producto no encontrado para CartItem ID: ' . $item->id);
                     }
@@ -35,14 +40,19 @@ class CartController extends Controller
             }
 
             $formattedCartItems = $cart ? $cart->items->map(function($item) {
+                $productPriceNet = $item->product->price ?? $item->price_at_addition;
+                $productPriceGross = round($productPriceNet * (1 + $this->ivaRate), 2); // Calcular precio bruto para la vista
+
                 return [
                     'id' => $item->id,
                     'product_id' => $item->product_id,
                     'name' => $item->product->name ?? 'Producto Desconocido',
-                    'price' => $item->product->price ?? $item->price_at_addition,
+                    'price_net' => $productPriceNet,
+                    'price_gross' => $productPriceGross,
                     'quantity' => $item->quantity,
                     'image' => $item->product->image_url ?? asset('images/default_product.png'),
-                    'subtotal_item' => $item->quantity * ($item->product->price ?? $item->price_at_addition),
+                    'subtotal_item_net' => $item->quantity * $productPriceNet,
+                    'subtotal_item_gross' => $item->quantity * $productPriceGross,
                 ];
             }) : collect();
 
@@ -50,30 +60,38 @@ class CartController extends Controller
             $sessionCart = Session::get('cart', []);
             $formattedCartItems = collect($sessionCart)->map(function($item) {
                 $product = Product::find($item['id']);
-                $productPrice = $product ? $product->price : $item['price'];
+                $productPriceNet = $product ? $product->price : $item['price']; // Asumiendo que item['price'] también es neto si no hay producto
+                $productPriceGross = round($productPriceNet * (1 + $this->ivaRate), 2);
 
                 return [
                     'id' => $item['id'],
                     'product_id' => $item['id'],
                     'name' => $item['name'],
-                    'price' => $productPrice,
+                    'price_net' => $productPriceNet,
+                    'price_gross' => $productPriceGross,
                     'quantity' => $item['quantity'],
                     'image' => $item['image'] ?? asset('images/default_product.png'),
-                    'subtotal_item' => $productPrice * $item['quantity'],
+                    'subtotal_item_net' => $productPriceNet * $item['quantity'],
+                    'subtotal_item_gross' => $productPriceGross * $item['quantity'],
                 ];
             });
 
-            $subtotal_products_only = $formattedCartItems->sum('subtotal_item');
+            // Sumar el subtotal NETO para pasar a la función de cálculo
+            $subtotal_products_only_NET = $formattedCartItems->sum('subtotal_item_net');
         }
 
-        $totals = $this->calculateCartTotals($subtotal_products_only);
+        // ===============================================================
+        // CÁLCULO DE IVA Y COMISIÓN DE MERCADO PAGO (Ahora asumiendo subtotal NETO de productos)
+        // ===============================================================
+        $totals = $this->calculateCartTotals($subtotal_products_only_NET);
 
         return view('cart.show', [
             'cartItems' => $formattedCartItems,
-            'subtotal' => $totals['subtotal'],
-            'iva_amount' => $totals['iva_amount'],
-            'mp_fee_amount' => $totals['mp_fee_amount'],
-            'final_total' => $totals['final_total'],
+            'subtotal_net_products' => $totals['subtotal_net_products'],      // Subtotal de productos SIN IVA
+            'iva_products_amount' => $totals['iva_products_amount'],          // IVA calculado sobre productos
+            'subtotal_gross_products' => $totals['subtotal_gross_products'],  // Subtotal de productos CON IVA
+            'mp_fee_amount' => $totals['mp_fee_amount'],                      // Monto de la comisión total de Mercado Pago (incluyendo su IVA)
+            'final_total' => $totals['final_total'],                          // Total final con todo
             'cart' => $cart,
         ]);
     }
@@ -96,7 +114,7 @@ class CartController extends Controller
             return response()->json(['message' => 'Producto no disponible o stock insuficiente.'], 400);
         }
 
-        $currentSubtotal = 0;
+        $currentSubtotalNet = 0; // Inicializar para la respuesta, será el subtotal NETO
 
         if (Auth::check()) {
             $user = Auth::user();
@@ -115,14 +133,14 @@ class CartController extends Controller
                     'cart_id' => $cart->id,
                     'product_id' => $productId,
                     'quantity' => $quantity,
-                    'price_at_addition' => $product->price,
+                    'price_at_addition' => $product->price, // Aquí guardamos el precio NETO
                     'image_path' => $product->image_url,
                 ]);
             }
             $cart->refresh();
             foreach ($cart->items as $item) {
                 if ($item->product) {
-                    $currentSubtotal += $item->quantity * $item->product->price;
+                    $currentSubtotalNet += $item->quantity * $item->product->price; // Sumamos precios NETOS
                 }
             }
 
@@ -130,7 +148,7 @@ class CartController extends Controller
             $sessionCart = Session::get('cart', []);
 
             if (isset($sessionCart[$productId])) {
-                $currentTotalQuantity = $sessionCart[$productId]['quantity'] + $quantity;
+                 $currentTotalQuantity = $sessionCart[$productId]['quantity'] + $quantity;
                 if ($product->stock < $currentTotalQuantity) {
                     return response()->json(['message' => 'Stock insuficiente para la cantidad solicitada.'], 400);
                 }
@@ -139,23 +157,25 @@ class CartController extends Controller
                 $sessionCart[$productId] = [
                     'id' => $productId,
                     'name' => $product->name,
-                    'price' => $product->price,
+                    'price' => $product->price, // Guardamos el precio NETO
                     'image' => $product->image_url,
                     'quantity' => $quantity,
+                    // Subtotal item en sesión también será NETO
                     'subtotal_item' => $product->price * $quantity,
                 ];
             }
             Session::put('cart', $sessionCart);
 
-            $currentSubtotal = array_sum(array_map(function($item) {
-                return $item['price'] * $item['quantity'];
+            $currentSubtotalNet = array_sum(array_map(function($item) {
+                return $item['price'] * $item['quantity']; // Sumamos precios NETOS
             }, $sessionCart));
         }
 
+        // Aquí solo devolvemos el subtotal de productos NETO para el AJAX
         return response()->json([
             'message' => 'Producto añadido al carrito correctamente.',
             'cartCount' => $this->getCartCount(),
-            'total' => $currentSubtotal,
+            'subtotal_net' => $currentSubtotalNet,
         ]);
     }
 
@@ -172,8 +192,8 @@ class CartController extends Controller
         $cartItemId = $request->cart_item_id;
         $newQuantity = $request->quantity;
 
-        $subtotal_products_only = 0;
-        $itemSubtotal = 0;
+        $subtotal_products_only_NET = 0; // Será el subtotal neto de productos
+        $itemSubtotalNet = 0; // Para el subtotal neto del ítem afectado
 
         if (Auth::check()) {
             $user = Auth::user();
@@ -193,15 +213,16 @@ class CartController extends Controller
                 $cart->refresh();
                 foreach ($cart->items as $item) {
                     if ($item->product) {
-                        $subtotal_products_only += $item->quantity * $item->product->price;
+                        $subtotal_products_only_NET += $item->quantity * $item->product->price;
                     }
                 }
-                $totals = $this->calculateCartTotals($subtotal_products_only);
+                $totals = $this->calculateCartTotals($subtotal_products_only_NET);
                 return response()->json([
                     'success' => true,
                     'message' => 'Producto no encontrado, eliminado del carrito.',
-                    'subtotal' => $totals['subtotal'],
-                    'iva_amount' => $totals['iva_amount'],
+                    'subtotal_net_products' => $totals['subtotal_net_products'],
+                    'iva_products_amount' => $totals['iva_products_amount'],
+                    'subtotal_gross_products' => $totals['subtotal_gross_products'],
                     'mp_fee_amount' => $totals['mp_fee_amount'],
                     'final_total' => $totals['final_total'],
                     'cartCount' => $this->getCartCount(),
@@ -214,7 +235,7 @@ class CartController extends Controller
                 }
                 $cartItem->quantity = $newQuantity;
                 $cartItem->save();
-                $itemSubtotal = $newQuantity * $product->price;
+                $itemSubtotalNet = $newQuantity * $product->price; // Subtotal neto del ítem
             } else {
                 $cartItem->delete();
             }
@@ -222,11 +243,11 @@ class CartController extends Controller
             $cart->refresh();
             foreach ($cart->items as $item) {
                 if ($item->product) {
-                    $subtotal_products_only += $item->quantity * $item->product->price;
+                    $subtotal_products_only_NET += $item->quantity * $item->product->price;
                 }
             }
 
-        } else {
+        } else { // Usuario Invitado
             $sessionCart = Session::get('cart', []);
             $productId = $cartItemId;
 
@@ -245,9 +266,9 @@ class CartController extends Controller
                             return response()->json(['success' => false, 'message' => 'Stock insuficiente para la cantidad solicitada.'], 400);
                         }
                         $item['quantity'] = $newQuantity;
-                        $item['price'] = $product->price;
-                        $item['subtotal_item'] = $newQuantity * $product->price;
-                        $itemSubtotal = $item['subtotal_item'];
+                        $item['price'] = $product->price; // Asegurarse que el precio en sesión es el actual NETO
+                        $item['subtotal_item'] = $newQuantity * $product->price; // Recalcular subtotal NETO del ítem
+                        $itemSubtotalNet = $item['subtotal_item'];
                     } else {
                         unset($sessionCart[$key]);
                     }
@@ -262,10 +283,11 @@ class CartController extends Controller
             }
             Session::put('cart', $sessionCart);
 
-            $subtotal_products_only = collect($sessionCart)->sum('subtotal_item');
+            $subtotal_products_only_NET = collect($sessionCart)->sum('subtotal_item');
         }
 
-        $totals = $this->calculateCartTotals($subtotal_products_only);
+        // Recalcular todos los totales con la lógica unificada
+        $totals = $this->calculateCartTotals($subtotal_products_only_NET);
 
         return response()->json([
             'success' => true,
@@ -274,10 +296,12 @@ class CartController extends Controller
                 'id' => $cartItemId,
                 'product_id' => $cartItemId,
                 'quantity' => $newQuantity,
-                'subtotal_item' => $itemSubtotal,
+                'subtotal_item_net' => $itemSubtotalNet, // Subtotal NETO del ítem individual
+                'subtotal_item_gross' => round($itemSubtotalNet * (1 + $this->ivaRate), 2), // Subtotal BRUTO del ítem individual
             ],
-            'subtotal' => $totals['subtotal'],
-            'iva_amount' => $totals['iva_amount'],
+            'subtotal_net_products' => $totals['subtotal_net_products'],
+            'iva_products_amount' => $totals['iva_products_amount'],
+            'subtotal_gross_products' => $totals['subtotal_gross_products'],
             'mp_fee_amount' => $totals['mp_fee_amount'],
             'final_total' => $totals['final_total'],
             'cartCount' => $this->getCartCount(),
@@ -294,7 +318,7 @@ class CartController extends Controller
         ]);
 
         $cartItemId = $request->cart_item_id;
-        $subtotal_products_only = 0;
+        $subtotal_products_only_NET = 0;
 
         if (Auth::check()) {
             $user = Auth::user();
@@ -312,7 +336,7 @@ class CartController extends Controller
             $cart->refresh();
             foreach ($cart->items as $item) {
                 if ($item->product) {
-                    $subtotal_products_only += $item->quantity * $item->product->price;
+                    $subtotal_products_only_NET += $item->quantity * $item->product->price;
                 }
             }
 
@@ -334,16 +358,17 @@ class CartController extends Controller
             }
             Session::put('cart', $sessionCart);
 
-            $subtotal_products_only = collect($sessionCart)->sum('subtotal_item');
+            $subtotal_products_only_NET = collect($sessionCart)->sum('subtotal_item');
         }
 
-        $totals = $this->calculateCartTotals($subtotal_products_only);
+        $totals = $this->calculateCartTotals($subtotal_products_only_NET);
 
         return response()->json([
             'success' => true,
             'message' => 'Producto eliminado del carrito.',
-            'subtotal' => $totals['subtotal'],
-            'iva_amount' => $totals['iva_amount'],
+            'subtotal_net_products' => $totals['subtotal_net_products'],
+            'iva_products_amount' => $totals['iva_products_amount'],
+            'subtotal_gross_products' => $totals['subtotal_gross_products'],
             'mp_fee_amount' => $totals['mp_fee_amount'],
             'final_total' => $totals['final_total'],
             'cartCount' => $this->getCartCount(),
@@ -377,7 +402,7 @@ class CartController extends Controller
                         'cart_id' => $cart->id,
                         'product_id' => $productId,
                         'quantity' => $itemData['quantity'],
-                        'price_at_addition' => $product->price,
+                        'price_at_addition' => $product->price, // Asumiendo que product->price es NETO
                         'image_path' => $product->image_url,
                     ]);
                 }
@@ -403,27 +428,42 @@ class CartController extends Controller
 
     /**
      * Helper para calcular el IVA y la comisión de Mercado Pago.
-     * @param float $subtotal_products_only El subtotal de los productos, asumiendo que ya incluye su IVA.
-     * @return array Con subtotal, iva_amount (IVA de productos), mp_fee_amount (comisión MP total), final_total.
+     * Recibe el subtotal de productos NETO (sin IVA de productos).
+     * @param float $subtotal_products_only_NET El subtotal de los productos sin IVA.
+     * @return array Con subtotal_net_products, iva_products_amount, subtotal_gross_products, mp_fee_amount, final_total.
      */
-    public function calculateCartTotals($subtotal_products_only) // <-- ¡CAMBIO A PUBLIC!
+    public function calculateCartTotals($subtotal_products_only_NET)
     {
-        $iva_rate = 0.19; // 19% IVA en Colombia
+        $iva_rate = $this->ivaRate; // 19% IVA en Colombia
         $mercadopago_fee_percentage = 0.0329; // 3.29% de Mercado Pago
         $mercadopago_fixed_fee = 952.00; // Monto fijo de Mercado Pago
 
-        $iva_amount = round($subtotal_products_only * ($iva_rate / (1 + $iva_rate)), 2);
+        // 1. Calcular el IVA para los productos (se aplica sobre el precio NETO)
+        $iva_products_amount = round($subtotal_products_only_NET * $iva_rate, 2);
 
-        $mp_commission_on_subtotal = $subtotal_products_only * $mercadopago_fee_percentage;
-        $mp_commission_base = $mp_commission_on_subtotal + $mercadopago_fixed_fee;
+        // Subtotal BRUTO de los productos (NETO + IVA de productos)
+        $subtotal_products_GROSS = $subtotal_products_only_NET + $iva_products_amount;
+
+        // 2. Calcular la comisión de Mercado Pago (aplicada sobre el subtotal BRUTO de los productos)
+        $mp_commission_on_gross_subtotal = $subtotal_products_GROSS * $mercadopago_fee_percentage;
+
+        // Base para el cálculo del IVA de Mercado Pago (porcentaje + fijo)
+        $mp_commission_base = $mp_commission_on_gross_subtotal + $mercadopago_fixed_fee;
+
+        // IVA sobre la comisión de Mercado Pago
         $mp_iva_on_fee = round($mp_commission_base * $iva_rate, 2);
+
+        // Monto total de la comisión de Mercado Pago (base + IVA de la comisión)
         $mp_fee_amount = round($mp_commission_base + $mp_iva_on_fee, 2);
 
-        $final_total = round($subtotal_products_only + $mp_fee_amount, 2);
+        // 3. Total final a pagar por el cliente
+        // Es el subtotal BRUTO de los productos MÁS el monto total de la comisión de Mercado Pago.
+        $final_total = round($subtotal_products_GROSS + $mp_fee_amount, 2);
 
         return [
-            'subtotal' => $subtotal_products_only,
-            'iva_amount' => $iva_amount,
+            'subtotal_net_products' => $subtotal_products_only_NET,
+            'iva_products_amount' => $iva_products_amount,
+            'subtotal_gross_products' => $subtotal_products_GROSS,
             'mp_fee_amount' => $mp_fee_amount,
             'final_total' => $final_total,
         ];

@@ -14,7 +14,12 @@ use App\Models\Product;
 class MercadoPagoController extends Controller
 {
     protected $cartController;
+    private $ivaRate = 0.19; // Asegurarse de que la tasa de IVA sea la misma aquí
 
+    /**
+     * Constructor para inicializar el SDK de Mercado Pago.
+     * Inyecta el CartController.
+     */
     public function __construct(CartController $cartController)
     {
         $this->cartController = $cartController;
@@ -28,10 +33,17 @@ class MercadoPagoController extends Controller
         }
     }
 
+    /**
+     * Crea una preferencia de pago en Mercado Pago.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function createPaymentPreference(Request $request)
     {
+        // 1. Obtener los ítems y calcular el subtotal NETO de los productos
         $cart = null;
-        $subtotal_products_only = 0;
+        $subtotal_products_only_NET = 0; // Este será el subtotal de los productos SIN IVA.
         $formattedCartItems = collect();
 
         if (Auth::check()) {
@@ -43,19 +55,22 @@ class MercadoPagoController extends Controller
 
             foreach ($cart->items as $item) {
                 if ($item->product) {
-                    $subtotal_products_only += $item->quantity * $item->product->price;
+                    $subtotal_products_only_NET += $item->quantity * $item->product->price; // Sumamos precios NETOS
                 } else {
                     \Log::warning('Producto asociado a cart item ' . $item->id . ' no encontrado.');
                     $item->delete();
                 }
             }
             $formattedCartItems = $cart->items->filter(fn($item) => $item->product)->map(function($item) {
+                $productPriceNet = $item->product->price; // Precio NETO de la DB
+                $productPriceGross = round($productPriceNet * (1 + $this->ivaRate), 2); // Calcular el precio BRUTO para MP
+
                 return [
                     'id' => $item->product_id,
                     'title' => $item->product->name,
                     'description' => Str::limit($item->product->description ?? $item->product->name, 250),
                     'quantity' => $item->quantity,
-                    'unit_price' => (float) round($item->product->price, 2),
+                    'unit_price' => (float) $productPriceGross, // ENVIAR EL PRECIO BRUTO A MERCADO PAGO
                     'currency_id' => "COP",
                     'picture_url' => $item->product->image_url ?? asset('images/default_product.png'),
                 ];
@@ -65,19 +80,24 @@ class MercadoPagoController extends Controller
             $sessionCart = Session::get('cart', []);
             $formattedCartItems = collect($sessionCart)->map(function($item) {
                 $product = Product::find($item['id']);
-                $price = $product ? $product->price : $item['price'];
+                $priceNet = $product ? $product->price : $item['price']; // Asumiendo que el precio del producto es NETO
+                $priceGross = round($priceNet * (1 + $this->ivaRate), 2); // Calcular el precio BRUTO para MP
+
                 return [
                     'id' => $item['id'],
                     'title' => $item['name'],
                     'description' => Str::limit($product->description ?? $item['name'], 250),
                     'quantity' => $item['quantity'],
-                    'unit_price' => (float) round($price, 2),
+                    'unit_price' => (float) $priceGross, // ENVIAR EL PRECIO BRUTO A MERCADO PAGO
                     'currency_id' => "COP",
                     'picture_url' => $item['image'] ?? asset('images/default_product.png'),
                 ];
             });
-            $subtotal_products_only = $formattedCartItems->sum(function($item) {
-                return $item['quantity'] * $item['unit_price'];
+            // Sumar el subtotal NETO para pasar a la función de cálculo
+            $subtotal_products_only_NET = collect($sessionCart)->sum(function($item) {
+                $product = Product::find($item['id']);
+                // Se asume que item['price'] y product->price son NETOS
+                return $item['quantity'] * ($product ? $product->price : $item['price']);
             });
         }
 
@@ -85,9 +105,25 @@ class MercadoPagoController extends Controller
             return back()->with('error', 'Tu carrito está vacío. No se puede proceder con el pago.');
         }
 
-        $totals = $this->cartController->calculateCartTotals($subtotal_products_only);
+        // 2. Calcular los totales finales para la preferencia usando el método del CartController
+        // Ahora pasamos el subtotal NETO a calculateCartTotals
+        $totals = $this->cartController->calculateCartTotals($subtotal_products_only_NET);
         $final_total_to_pay = $totals['final_total'];
 
+        // ===================================================================
+        // AÑADE ESTO PARA DEPURACIÓN (MANTENER)
+        // ===================================================================
+        \Log::info('Detalles de totales antes de enviar a Mercado Pago:', [
+            'subtotal_net_productos' => $totals['subtotal_net_products'],
+            'iva_productos_calculado' => $totals['iva_products_amount'],
+            'subtotal_gross_productos' => $totals['subtotal_gross_products'],
+            'comision_mp_total' => $totals['mp_fee_amount'],
+            'total_final_a_pagar' => $totals['final_total'],
+            'items_enviados_a_mp' => $formattedCartItems->toArray(), // Para ver los precios unitarios enviados a MP (ahora brutos)
+        ]);
+        // ===================================================================
+
+        // Asegurarse de que el monto sea válido
         if ($final_total_to_pay <= 0) {
             \Log::error('Intento de crear preferencia con monto total <= 0: ' . $final_total_to_pay);
             return back()->with('error', 'El monto total a pagar debe ser positivo.');
