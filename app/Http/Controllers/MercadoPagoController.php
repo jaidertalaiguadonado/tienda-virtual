@@ -41,30 +41,19 @@ class MercadoPagoController extends Controller
      */
     public function createPaymentPreference(Request $request)
     {
-        // 1. Obtener los ítems y calcular el subtotal NETO de los productos
         $cart = null;
-        $subtotal_products_only_NET = 0; // Este será el subtotal de los productos SIN IVA.
-        $formattedCartItems = collect();
+        $mpItems = collect(); // Ítems formateados específicamente para el payload de Mercado Pago
 
         if (Auth::check()) {
             $user = Auth::user();
-            // CORRECCIÓN 1: Cambiar 'items' a 'cartItems' al cargar la relación
+            // Carga la relación 'cartItems' (CORREGIDO)
             $cart = $user->cart()->with('cartItems.product')->first();
             if (!$cart) {
                 return back()->with('error', 'Tu carrito no existe o está vacío.');
             }
 
-            // CORRECCIÓN 2: Cambiar 'items' a 'cartItems' en el foreach
-            foreach ($cart->cartItems as $item) {
-                if ($item->product) {
-                    $subtotal_products_only_NET += $item->quantity * $item->product->price; // Sumamos precios NETOS
-                } else {
-                    \Log::warning('Producto asociado a cart item ' . $item->id . ' no encontrado.');
-                    $item->delete();
-                }
-            }
-            // CORRECCIÓN 3: Cambiar 'items' a 'cartItems' en la colección mapeada
-            $formattedCartItems = ($cart->cartItems ?? collect())->filter(fn($item) => $item->product)->map(function($item) {
+            // Construir los ítems para Mercado Pago (con precios brutos)
+            $mpItems = ($cart->cartItems ?? collect())->filter(fn($item) => $item->product)->map(function($item) {
                 $productPriceNet = $item->product->price; // Precio NETO de la DB
                 $productPriceGross = round($productPriceNet * (1 + $this->ivaRate), 2); // Calcular el precio BRUTO para MP
 
@@ -80,8 +69,9 @@ class MercadoPagoController extends Controller
             });
 
         } else {
+            // Lógica para carrito de sesión (guest)
             $sessionCart = Session::get('cart', []);
-            $formattedCartItems = collect($sessionCart)->map(function($item) {
+            $mpItems = collect($sessionCart)->map(function($item) {
                 $product = Product::find($item['id']);
                 $priceNet = $product ? $product->price : ($item['price'] ?? 0); // Asumiendo que el precio del producto es NETO
                 $priceGross = round($priceNet * (1 + $this->ivaRate), 2); // Calcular el precio BRUTO para MP
@@ -96,21 +86,18 @@ class MercadoPagoController extends Controller
                     'picture_url' => $item['image'] ?? asset('images/default_product.png'),
                 ];
             });
-            // Sumar el subtotal NETO para pasar a la función de cálculo
-            $subtotal_products_only_NET = collect($sessionCart)->sum(function($item) {
-                $product = Product::find($item['id']);
-                // Se asume que item['price'] y product->price son NETOS
-                return ($item['quantity'] ?? 0) * ($product ? $product->price : ($item['price'] ?? 0));
-            });
         }
 
-        if ($formattedCartItems->isEmpty()) {
+        if ($mpItems->isEmpty()) {
             return back()->with('error', 'Tu carrito está vacío. No se puede proceder con el pago.');
         }
 
-        // 2. Calcular los totales finales para la preferencia usando el método del CartController
-        // Ahora pasamos el subtotal NETO a calculateCartTotals
-        $totals = $this->cartController->calculateCartTotals($subtotal_products_only_NET);
+        // ===================================================================
+        // MODIFICACIÓN CRÍTICA:
+        // Obtener los ítems formateados del CartController para un cálculo de totales consistente.
+        // ===================================================================
+        $actualCartItemsForTotals = $this->cartController->getFormattedCartItems();
+        $totals = $this->cartController->calculateCartTotals($actualCartItemsForTotals);
         $final_total_to_pay = $totals['final_total'];
 
         // ===================================================================
@@ -122,7 +109,7 @@ class MercadoPagoController extends Controller
             'subtotal_gross_productos' => $totals['subtotal_gross_products'],
             'comision_mp_total' => $totals['mp_fee_amount'],
             'total_final_a_pagar' => $totals['final_total'],
-            'items_enviados_a_mp' => $formattedCartItems->toArray(), // Para ver los precios unitarios enviados a MP (ahora brutos)
+            'items_enviados_a_mp' => $mpItems->toArray(), // Para ver los precios unitarios enviados a MP (ahora brutos)
         ]);
         // ===================================================================
 
@@ -135,7 +122,7 @@ class MercadoPagoController extends Controller
         $preferenceClient = new PreferenceClient();
         try {
             $preferenceData = [
-                "items" => $formattedCartItems->toArray(),
+                "items" => $mpItems->toArray(), // Aquí se usan los $mpItems preparados para Mercado Pago
                 "back_urls" => [
                     "success" => route('mercadopago.success'),
                     "failure" => route('mercadopago.failure'),
