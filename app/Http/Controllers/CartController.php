@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Cart;         // Importa el modelo Cart
-use App\Models\CartItem;     // Importa el modelo CartItem
-use App\Models\Product;      // Importa el modelo Product
+use App\Models\Cart;
+use App\Models\CartItem;
+use App\Models\Product;
 
 class CartController extends Controller
 {
@@ -17,34 +17,29 @@ class CartController extends Controller
     public function show()
     {
         $cart = null;
-        $subtotal_products_only = 0; // Este será el 'subtotal' de los productos, asumiendo que incluye IVA.
+        $subtotal_products_only = 0;
         $formattedCartItems = collect();
 
         if (Auth::check()) {
-            // Usuario autenticado: Cargar carrito desde la base de datos
             $user = Auth::user();
             $cart = $user->cart()->with('items.product')->firstOrCreate(['user_id' => $user->id]);
 
             if ($cart) {
                 foreach ($cart->items as $item) {
-                    // Asegurarse de que product no sea nulo antes de acceder a price
                     if ($item->product) {
                         $subtotal_products_only += $item->quantity * $item->product->price;
                     } else {
-                        // Manejar caso donde el producto se eliminó pero el item sigue en el carrito
-                        // Puedes considerar eliminar el item del carrito o loguear una advertencia
                         \Log::warning('Producto no encontrado para CartItem ID: ' . $item->id);
                     }
                 }
             }
 
-            // Mapear los ítems para la vista
             $formattedCartItems = $cart ? $cart->items->map(function($item) {
                 return [
-                    'id' => $item->id, // ID del CartItem (para autenticados)
+                    'id' => $item->id,
                     'product_id' => $item->product_id,
-                    'name' => $item->product->name ?? 'Producto Desconocido', // Manejar producto nulo
-                    'price' => $item->product->price ?? $item->price_at_addition, // Preferir precio actual, si no, el de adición
+                    'name' => $item->product->name ?? 'Producto Desconocido',
+                    'price' => $item->product->price ?? $item->price_at_addition,
                     'quantity' => $item->quantity,
                     'image' => $item->product->image_url ?? asset('images/default_product.png'),
                     'subtotal_item' => $item->quantity * ($item->product->price ?? $item->price_at_addition),
@@ -52,14 +47,13 @@ class CartController extends Controller
             }) : collect();
 
         } else {
-            // Usuario invitado: Cargar carrito desde la sesión
             $sessionCart = Session::get('cart', []);
             $formattedCartItems = collect($sessionCart)->map(function($item) {
-                $product = Product::find($item['id']); // Obtener el producto para el precio y detalles actuales
-                $productPrice = $product ? $product->price : $item['price']; // Usar precio actual del producto si existe
+                $product = Product::find($item['id']);
+                $productPrice = $product ? $product->price : $item['price'];
 
                 return [
-                    'id' => $item['id'], // ID del producto (para invitados)
+                    'id' => $item['id'],
                     'product_id' => $item['id'],
                     'name' => $item['name'],
                     'price' => $productPrice,
@@ -72,18 +66,15 @@ class CartController extends Controller
             $subtotal_products_only = $formattedCartItems->sum('subtotal_item');
         }
 
-        // ===============================================================
-        // CÁLCULO DE IVA Y COMISIÓN DE MERCADO PAGO (Usando la función protegida)
-        // ===============================================================
         $totals = $this->calculateCartTotals($subtotal_products_only);
 
         return view('cart.show', [
             'cartItems' => $formattedCartItems,
-            'subtotal' => $totals['subtotal'],          // Subtotal de productos (que ya incluye su propio IVA si el precio es bruto)
-            'iva_amount' => $totals['iva_amount'],      // IVA EXTRAÍDO del subtotal de productos (para fines informativos)
-            'mp_fee_amount' => $totals['mp_fee_amount'], // Monto de la comisión total de Mercado Pago (incluyendo su IVA)
-            'final_total' => $totals['final_total'],    // Total final con todo
-            'cart' => $cart, // Pasar el objeto carrito (puede ser null para invitados)
+            'subtotal' => $totals['subtotal'],
+            'iva_amount' => $totals['iva_amount'],
+            'mp_fee_amount' => $totals['mp_fee_amount'],
+            'final_total' => $totals['final_total'],
+            'cart' => $cart,
         ]);
     }
 
@@ -105,7 +96,7 @@ class CartController extends Controller
             return response()->json(['message' => 'Producto no disponible o stock insuficiente.'], 400);
         }
 
-        $currentSubtotal = 0; // Inicializar para la respuesta
+        $currentSubtotal = 0;
 
         if (Auth::check()) {
             $user = Auth::user();
@@ -114,7 +105,6 @@ class CartController extends Controller
             $cartItem = $cart->items()->where('product_id', $productId)->first();
 
             if ($cartItem) {
-                // Verificar stock antes de sumar
                 if ($product->stock < ($cartItem->quantity + $quantity)) {
                     return response()->json(['message' => 'Stock insuficiente para la cantidad solicitada.'], 400);
                 }
@@ -129,9 +119,9 @@ class CartController extends Controller
                     'image_path' => $product->image_url,
                 ]);
             }
-            $cart->refresh(); // Recargar para obtener los items actualizados
+            $cart->refresh();
             foreach ($cart->items as $item) {
-                if ($item->product) { // Asegurar que el producto existe
+                if ($item->product) {
                     $currentSubtotal += $item->quantity * $item->product->price;
                 }
             }
@@ -140,7 +130,6 @@ class CartController extends Controller
             $sessionCart = Session::get('cart', []);
 
             if (isset($sessionCart[$productId])) {
-                 // Verificar stock antes de sumar
                 $currentTotalQuantity = $sessionCart[$productId]['quantity'] + $quantity;
                 if ($product->stock < $currentTotalQuantity) {
                     return response()->json(['message' => 'Stock insuficiente para la cantidad solicitada.'], 400);
@@ -153,7 +142,7 @@ class CartController extends Controller
                     'price' => $product->price,
                     'image' => $product->image_url,
                     'quantity' => $quantity,
-                    'subtotal_item' => $product->price * $quantity, // Añadir para facilitar el cálculo en otras partes
+                    'subtotal_item' => $product->price * $quantity,
                 ];
             }
             Session::put('cart', $sessionCart);
@@ -166,7 +155,7 @@ class CartController extends Controller
         return response()->json([
             'message' => 'Producto añadido al carrito correctamente.',
             'cartCount' => $this->getCartCount(),
-            'total' => $currentSubtotal, // Solo subtotal de productos en la respuesta AJAX (para consistencia con el add)
+            'total' => $currentSubtotal,
         ]);
     }
 
@@ -176,7 +165,7 @@ class CartController extends Controller
     public function update(Request $request)
     {
         $request->validate([
-            'cart_item_id' => 'required', // Puede ser cart_item_id (DB) o product_id (para sesión)
+            'cart_item_id' => 'required',
             'quantity' => 'required|integer|min:0',
         ]);
 
@@ -184,7 +173,7 @@ class CartController extends Controller
         $newQuantity = $request->quantity;
 
         $subtotal_products_only = 0;
-        $itemSubtotal = 0; // Para el subtotal del ítem afectado en la respuesta
+        $itemSubtotal = 0;
 
         if (Auth::check()) {
             $user = Auth::user();
@@ -200,9 +189,7 @@ class CartController extends Controller
 
             $product = $cartItem->product;
             if (!$product) {
-                // Si el producto asociado no existe, eliminar el item del carrito
                 $cartItem->delete();
-                // Recalcular el carrito
                 $cart->refresh();
                 foreach ($cart->items as $item) {
                     if ($item->product) {
@@ -232,23 +219,22 @@ class CartController extends Controller
                 $cartItem->delete();
             }
 
-            $cart->refresh(); // Recargar el carrito para obtener los ítems actualizados
+            $cart->refresh();
             foreach ($cart->items as $item) {
                 if ($item->product) {
                     $subtotal_products_only += $item->quantity * $item->product->price;
                 }
             }
 
-        } else { // Usuario Invitado
+        } else {
             $sessionCart = Session::get('cart', []);
-            $productId = $cartItemId; // En sesión, cart_item_id es el product_id
+            $productId = $cartItemId;
 
             $found = false;
-            foreach ($sessionCart as $key => &$item) { // Usar & para modificar el array original
+            foreach ($sessionCart as $key => &$item) {
                 if ($item['id'] == $productId) {
                     $product = Product::find($productId);
                     if (!$product) {
-                        // Si el producto no existe en DB, eliminarlo de la sesión
                         unset($sessionCart[$key]);
                         $found = true;
                         break;
@@ -259,8 +245,8 @@ class CartController extends Controller
                             return response()->json(['success' => false, 'message' => 'Stock insuficiente para la cantidad solicitada.'], 400);
                         }
                         $item['quantity'] = $newQuantity;
-                        $item['price'] = $product->price; // Asegurarse que el precio en sesión es el actual
-                        $item['subtotal_item'] = $newQuantity * $product->price; // Recalcular subtotal del ítem
+                        $item['price'] = $product->price;
+                        $item['subtotal_item'] = $newQuantity * $product->price;
                         $itemSubtotal = $item['subtotal_item'];
                     } else {
                         unset($sessionCart[$key]);
@@ -269,7 +255,7 @@ class CartController extends Controller
                     break;
                 }
             }
-            unset($item); // Romper la referencia al último elemento
+            unset($item);
 
             if (!$found) {
                 return response()->json(['success' => false, 'message' => 'Producto no encontrado en el carrito de sesión.'], 404);
@@ -279,7 +265,6 @@ class CartController extends Controller
             $subtotal_products_only = collect($sessionCart)->sum('subtotal_item');
         }
 
-        // Recalcular todos los totales con la lógica unificada
         $totals = $this->calculateCartTotals($subtotal_products_only);
 
         return response()->json([
@@ -287,9 +272,9 @@ class CartController extends Controller
             'message' => 'Carrito actualizado.',
             'item' => [
                 'id' => $cartItemId,
-                'product_id' => $cartItemId, // O el product_id real si es un caso de invitado
+                'product_id' => $cartItemId,
                 'quantity' => $newQuantity,
-                'subtotal_item' => $itemSubtotal, // Subtotal del ítem individual
+                'subtotal_item' => $itemSubtotal,
             ],
             'subtotal' => $totals['subtotal'],
             'iva_amount' => $totals['iva_amount'],
@@ -305,7 +290,7 @@ class CartController extends Controller
     public function remove(Request $request)
     {
         $request->validate([
-            'cart_item_id' => 'required', // Puede ser cart_item_id de DB o product_id de sesión
+            'cart_item_id' => 'required',
         ]);
 
         $cartItemId = $request->cart_item_id;
@@ -331,7 +316,7 @@ class CartController extends Controller
                 }
             }
 
-        } else { // Usuario Invitado
+        } else {
             $sessionCart = Session::get('cart', []);
             $productId = $cartItemId;
 
@@ -352,7 +337,6 @@ class CartController extends Controller
             $subtotal_products_only = collect($sessionCart)->sum('subtotal_item');
         }
 
-        // Recalcular todos los totales con la lógica unificada
         $totals = $this->calculateCartTotals($subtotal_products_only);
 
         return response()->json([
@@ -422,33 +406,19 @@ class CartController extends Controller
      * @param float $subtotal_products_only El subtotal de los productos, asumiendo que ya incluye su IVA.
      * @return array Con subtotal, iva_amount (IVA de productos), mp_fee_amount (comisión MP total), final_total.
      */
-    protected function calculateCartTotals($subtotal_products_only) // <-- ¡AQUÍ ESTÁ EL CAMBIO!
+    public function calculateCartTotals($subtotal_products_only) // <-- ¡CAMBIO A PUBLIC!
     {
         $iva_rate = 0.19; // 19% IVA en Colombia
         $mercadopago_fee_percentage = 0.0329; // 3.29% de Mercado Pago
         $mercadopago_fixed_fee = 952.00; // Monto fijo de Mercado Pago
 
-        // 1. IVA extraído del subtotal de productos (para mostrar, si los precios ya son brutos)
-        // Si $subtotal_products_only es $68,000 (precio bruto) y el IVA es 19%:
-        // IVA = $68,000 * (0.19 / (1 + 0.19)) = $68,000 * (0.19 / 1.19) = $68,000 * 0.15966 = $10,857.14
         $iva_amount = round($subtotal_products_only * ($iva_rate / (1 + $iva_rate)), 2);
 
-        // 2. Calcular la comisión de Mercado Pago
-        // La comisión porcentual se aplica sobre el subtotal de productos
         $mp_commission_on_subtotal = $subtotal_products_only * $mercadopago_fee_percentage;
-
-        // Base para el cálculo del IVA de Mercado Pago (porcentaje + fijo)
         $mp_commission_base = $mp_commission_on_subtotal + $mercadopago_fixed_fee;
-
-        // IVA sobre la comisión de Mercado Pago
         $mp_iva_on_fee = round($mp_commission_base * $iva_rate, 2);
-
-        // Monto total de la comisión de Mercado Pago (base + IVA de la comisión)
         $mp_fee_amount = round($mp_commission_base + $mp_iva_on_fee, 2);
 
-        // 3. Total final a pagar por el cliente
-        // Es el subtotal de los productos (que ya contiene su propio IVA)
-        // MÁS el monto total de la comisión de Mercado Pago.
         $final_total = round($subtotal_products_only + $mp_fee_amount, 2);
 
         return [
