@@ -7,15 +7,15 @@
 
     <title>{{ config('app.name', 'Tienda JD') }} - Carrito</title>
 
-    <link rel="preconnect" href="https:
-    <link rel="preconnect" href="https:
-    <link href="https:
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-    @vite(['resources/js/app.js'])     
-    
+    @vite(['resources/js/app.js'])
     <style>
 
-        
+
+/* Variables CSS */
 :root {
     --primary-color: #007BFF;
     --primary-light: #66B2FF;
@@ -38,8 +38,8 @@
     --error-color: #dc3545;
     --info-color: #17a2b8;
 
-    
-    --mercadopago-button-color: #009EE3; 
+    /* Nuevas variables para el botón de Mercado Pago */
+    --mercadopago-button-color: #009EE3; /* Azul de Mercado Pago */
     --mercadopago-button-hover: #008ACD;
     --mercadopago-text-color: #ffffff;
 }
@@ -59,7 +59,7 @@ body {
     color: var(--text-dark);
     font-size: 16px;
 
-    
+    /* Sticky Footer - Flexbox layout */
     display: flex;
     flex-direction: column;
     min-height: 100vh;
@@ -70,7 +70,7 @@ a {
     color: inherit;
 }
 
-
+/* Navbar Styles */
 .navbar {
     background-color: var(--card-background);
     border-bottom: 1px solid var(--border-color);
@@ -149,7 +149,7 @@ a {
 
 .logout-button-navbar {
     background-color: var(--logout-color);
-    color: white;
+    color: var(--button-text);
     padding: 0.5rem 1rem;
     border: none;
     border-radius: 0.5rem;
@@ -170,7 +170,7 @@ a {
     box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.4);
 }
 
-
+/* Main Content Area */
 .cart-container {
     max-width: 1000px;
     margin: 3rem auto;
@@ -289,20 +289,40 @@ a {
     transform: translateY(-1px);
 }
 
+/* Desglose de Totales */
 .cart-summary {
-    text-align: right;
-    font-size: 1.8rem;
-    font-weight: 800;
-    color: var(--text-dark);
+    background-color: var(--background-light); /* Usar variable para consistencia */
+    border: 1px solid var(--border-color); /* Usar variable para consistencia */
+    padding: 1.5rem;
+    border-radius: 8px;
     margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 2px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    font-size: 1.1rem;
 }
 
-#cart-total {
+.cart-summary div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px dashed #e0e0e0; /* Considerar una variable si este color se repite */
+}
+
+.cart-summary div:last-child {
+    border-bottom: none;
+    font-weight: bold;
+    font-size: 1.3rem;
+    color: var(--success-color); /* Usar variable para el color verde */
+}
+
+/* Old #cart-total style - likely not needed with new summary structure */
+/* #cart-total {
     color: var(--primary-color);
     margin-left: 1rem;
-}
+} */
+
 
 .empty-cart-message {
     font-size: 1.5rem;
@@ -334,8 +354,9 @@ a {
     width: 100%;
 }
 
-.continue-shopping-button,
-.mercadopago-pay-button {
+.continue-shopping-button {
+    background-color: var(--secondary-color); /* Usar variable para consistencia */
+    color: var(--button-text);
     display: inline-block;
     padding: 0.8rem 2rem;
     border-radius: 0.75rem;
@@ -349,16 +370,32 @@ a {
 }
 
 .continue-shopping-button:hover {
-    background-color: #138D9E;
+    background-color: var(--secondary-color); /* Ya está en la variable, solo necesitamos el hover */
+    filter: brightness(0.9); /* Una forma de oscurecerlo sin otra variable */
     transform: translateY(-2px);
+}
+
+.mercadopago-pay-button {
+    background-color: var(--mercadopago-button-color); /* Usar variable */
+    color: var(--mercadopago-text-color); /* Usar variable */
+    display: inline-block;
+    padding: 0.8rem 2rem;
+    border-radius: 0.75rem;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    border: none;
+    cursor: pointer;
 }
 
 .mercadopago-pay-button:hover {
-    background-color: var(--mercadopago-button-hover);
+    background-color: var(--mercadopago-button-hover); /* Usar variable */
     transform: translateY(-2px);
 }
 
-
+/* Footer Styles */
 .footer {
     background-color: var(--primary-color);
     color: var(--button-text);
@@ -376,7 +413,7 @@ a {
     opacity: 0.8;
 }
 
-
+/* Responsive Adjustments */
 @media (max-width: 768px) {
     .navbar {
         padding: 1rem 1rem;
@@ -395,8 +432,7 @@ a {
 
     .cart-container {
         margin: 2rem 1rem;
-        
-        padding: 1.5rem; 
+        padding: 1.5rem;
     }
 
     .cart-title {
@@ -419,23 +455,21 @@ a {
         border-radius: 0.5rem;
         flex-direction: column;
         align-items: flex-start;
-        
-        padding: 1rem; 
-        box-sizing: border-box; 
+        padding: 1rem;
+        box-sizing: border-box;
     }
 
     .cart-table td {
         border-bottom: none;
         text-align: left;
-        
-        padding: 0.4rem 0; 
+        padding: 0.4rem 0;
         position: relative;
         width: 100%;
         display: flex;
         justify-content: flex-start;
         align-items: center;
         gap: 0.5rem;
-        box-sizing: border-box; 
+        box-sizing: border-box;
     }
 
     .cart-table td:before {
@@ -516,9 +550,16 @@ a {
 
     .cart-summary {
         font-size: 1.5rem;
-        text-align: center;
+        text-align: center; /* This might override the flex justification, but for mobile it might be desired for the whole summary block */
         padding-top: 1rem;
     }
+
+    /* Keep the default flex behavior for summary items */
+    .cart-summary div {
+        justify-content: space-between; /* Ensure content is still justified */
+        text-align: left; /* Ensure text labels are left-aligned */
+    }
+
 
     #cart-total {
         display: block;
@@ -571,13 +612,11 @@ a {
     }
 
     .cart-table tr {
-        
-        padding: 0.8rem; 
+        padding: 0.8rem;
     }
 
     .cart-table td {
-        
-        padding: 0.3rem 0; 
+        padding: 0.3rem 0;
         gap: 0.3rem;
     }
 
@@ -615,7 +654,7 @@ a {
         padding: 0.5rem 0.8rem;
         font-size: 0.85rem;
     }
-    
+    /*solucion pcp */
 
     .cart-table td[data-label="Acción:"] {
         margin-top: 0.8rem;
@@ -640,7 +679,8 @@ a {
         max-width: 250px;
     }
 }
-        </style>
+        
+    </style>
 </head>
 <body>
     <nav class="navbar">
@@ -696,7 +736,6 @@ a {
     <div class="cart-container">
         <h1 class="cart-title">Tu Carrito de Compras</h1>
 
-        
         <table class="cart-table" style="display: {{ empty($cartItems) ? 'none' : 'table' }};">
             <thead>
                 <tr>
@@ -709,47 +748,58 @@ a {
             </thead>
             <tbody id="cart-items-body">
                 @foreach ($cartItems as $item)
-                    <tr data-product-id="{{ $item['product_id'] ?? $item['id'] }}">
+                    {{-- Usamos $item['id'] que debe ser el cart_item_id para autenticados o product_id para invitados --}}
+                    <tr data-product-id="{{ $item['id'] }}">
                         <td data-label="Producto:">
-                            <img src="{{ $item['image_path'] ?? $item['image'] ?? 'https:
-                            <span class="cart-item-name">{{ $item['product']->name ?? $item['name'] }}</span>
+                            {{-- Asegúrate que 'image' o 'image_path' contenga la URL correcta --}}
+                            <img src="{{ $item['image'] ?? 'https://via.placeholder.com/60' }}" alt="{{ $item['name'] }}" class="cart-item-image">
+                            <span class="cart-item-name">{{ $item['name'] }}</span>
                         </td>
-                        <td data-label="Precio:">$<span class="item-price">{{ number_format(($item['price_at_addition'] ?? $item['price']), 2, ',', '.') }}</span></td>
+                        {{-- Usamos 'price' ya que en formattedCartItems lo establecemos como 'price_at_addition' o 'price' --}}
+                        <td data-label="Precio:">$<span class="item-price">{{ number_format($item['price'], 2, ',', '.') }}</span></td>
                         <td data-label="Cantidad:">
                             <div class="quantity-controls">
-                                <button class="quantity-button decrease-quantity" data-product-id="{{ $item['product_id'] ?? $item['id'] }}">-</button>
-                                <input type="number" class="quantity-input" value="{{ $item['quantity'] }}" min="1" data-product-id="{{ $item['product_id'] ?? $item['id'] }}">
-                                <button class="quantity-button increase-quantity" data-product-id="{{ $item['product_id'] ?? $item['id'] }}">+</button>
+                                {{-- Usamos $item['id'] aquí también --}}
+                                <button class="quantity-button decrease-quantity" data-product-id="{{ $item['id'] }}">-</button>
+                                {{-- Usamos $item['id'] aquí también --}}
+                                <input type="number" class="quantity-input" value="{{ $item['quantity'] }}" min="1" data-product-id="{{ $item['id'] }}">
+                                {{-- Usamos $item['id'] aquí también --}}
+                                <button class="quantity-button increase-quantity" data-product-id="{{ $item['id'] }}">+</button>
                             </div>
                         </td>
-                        <td data-label="Subtotal:" class="item-subtotal">${{ number_format((($item['price_at_addition'] ?? $item['price']) * $item['quantity']), 2, ',', '.') }}</td>
+                        {{-- Usamos 'subtotal_item' que debe ser calculado en formattedCartItems --}}
+                        <td data-label="Subtotal:" class="item-subtotal">${{ number_format($item['subtotal_item'], 2, ',', '.') }}</td>
                         <td data-label="Acción:">
-                            <button class="remove-button" data-product-id="{{ $item['product_id'] ?? $item['id'] }}">Eliminar</button>
+                            {{-- Usamos $item['id'] aquí también --}}
+                            <button class="remove-button" data-product-id="{{ $item['id'] }}">Eliminar</button>
                         </td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
 
-        <div class="cart-summary" style="display: {{ empty($cartItems) ? 'none' : 'block' }};">
-            Total: $<span id="cart-total">{{ number_format($total, 2, ',', '.') }}</span>
+        {{-- INICIO: Desglose de Totales con IVA y MP --}}
+        <div class="cart-summary" style="display: {{ empty($cartItems) ? 'none' : 'flex' }};"> {{-- Cambiado a flex --}}
+            <div>Subtotal Productos: $<span id="cart-products-subtotal">{{ number_format($subtotal, 2, ',', '.') }}</span></div>
+            <div>IVA (19%): $<span id="cart-iva-amount">{{ number_format($iva_amount, 2, ',', '.') }}</span></div>
+            <div>Comisión Mercado Pago (3.29%): $<span id="cart-mp-fee">{{ number_format($mp_fee_amount, 2, ',', '.') }}</span></div>
+            <div>
+                Total a pagar: $<span id="cart-final-total">{{ number_format($final_total, 2, ',', '.') }}</span>
+            </div>
         </div>
+        {{-- FIN: Desglose de Totales con IVA y MP --}}
 
         <p class="empty-cart-message" style="display: {{ empty($cartItems) ? 'block' : 'none' }};">Tu carrito está vacío. ¡Empieza a añadir productos!</p>
 
-        
         <div class="cart-actions" style="display: {{ empty($cartItems) ? 'none' : 'flex' }};">
             <a href="{{ route('welcome') }}" class="continue-shopping-button">Seguir Comprando</a>
 
-            
             <form action="{{ route('mercadopago.pay') }}" method="POST" id="mercadopago-checkout-form">
                 @csrf
-                
-                <input type="hidden" name="total_amount" id="mercadopago-amount" value="{{ $total }}">
+                {{-- Ahora el monto para Mercado Pago será el total final --}}
+                <input type="hidden" name="total_amount" id="mercadopago-amount" value="{{ $final_total }}">
                 <input type="hidden" name="description" id="mercadopago-description" value="Compra en Tienda JD">
                 
-                {{-- <input type="hidden" name="order_id" value="{{ $order->id }}"> --}}
-
                 <button type="submit" class="mercadopago-pay-button">Pagar con Mercado Pago</button>
             </form>
         </div>
@@ -757,8 +807,6 @@ a {
         <div class="cart-actions" style="display: {{ empty($cartItems) ? 'flex' : 'none' }}; justify-content: center;">
             <a href="{{ route('welcome') }}" class="continue-shopping-button">Seguir Comprando</a>
         </div>
-
-
     </div>
 
     <footer class="footer">
@@ -774,30 +822,31 @@ a {
             const cartItemCountMobileElement = document.getElementById('cart-item-count-mobile');
             const cartItemsBody = document.getElementById('cart-items-body');
             const cartTable = document.querySelector('.cart-table'); 
-            const cartTotalElement = document.getElementById('cart-total');
             const cartSummary = document.querySelector('.cart-summary');
             const emptyCartMessage = document.querySelector('.empty-cart-message');
             const cartActionsContainer = document.querySelector('.cart-actions'); 
 
-            
+            // Nuevos elementos para el desglose de totales
+            const cartProductsSubtotalElement = document.getElementById('cart-products-subtotal');
+            const cartIvaAmountElement = document.getElementById('cart-iva-amount');
+            const cartMpFeeElement = document.getElementById('cart-mp-fee');
+            const cartFinalTotalElement = document.getElementById('cart-final-total');
+
             const mercadopagoAmountInput = document.getElementById('mercadopago-amount');
             const mercadopagoDescriptionInput = document.getElementById('mercadopago-description');
             const mercadopagoCheckoutForm = document.getElementById('mercadopago-checkout-form');
 
-
-            
             if (menuToggle && mobileMenu) {
                 menuToggle.addEventListener('click', function() {
                     mobileMenu.classList.toggle('active');
                 });
             }
-
             
             function formatNumberForUI(number) {
+                // Utiliza 'es-CO' para formato de moneda colombiana (separador de miles como punto, decimal como coma)
                 return parseFloat(number).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             }
 
-            
             function getCartCount() {
                 fetch('/api/cart-count', {
                     method: 'GET',
@@ -820,12 +869,11 @@ a {
                     if (cartItemCountMobileElement) cartItemCountMobileElement.textContent = '0';
                 });
             }
-
             
             getCartCount();
 
-            
-            function updateCartUI(productId, newQuantity, newSubtotal, newTotal, cartCount) {
+            // Modificación de la función updateCartUI
+            function updateCartUI(productId, newQuantity, newSubtotalItem, newProductsSubtotal, newTaxAmount, newMpFeeAmount, newFinalTotal, cartCount) {
                 const row = cartItemsBody.querySelector(`tr[data-product-id="${productId}"]`);
                 const cartIsEmpty = cartCount === 0;
 
@@ -835,22 +883,29 @@ a {
                     }
                 } else if (row) { 
                     row.querySelector('.quantity-input').value = newQuantity;
-                    row.querySelector('.item-subtotal').textContent = '$' + formatNumberForUI(newSubtotal);
+                    row.querySelector('.item-subtotal').textContent = '$' + formatNumberForUI(newSubtotalItem);
                 }
 
-                
-                if (cartTotalElement) {
-                    cartTotalElement.textContent = formatNumberForUI(newTotal);
-                    
-                    if (mercadopagoAmountInput) {
-                        mercadopagoAmountInput.value = newTotal; 
-                    }
+                // Actualizar los nuevos elementos del resumen del carrito
+                if (cartProductsSubtotalElement) {
+                    cartProductsSubtotalElement.textContent = formatNumberForUI(newProductsSubtotal);
+                }
+                if (cartIvaAmountElement) {
+                    cartIvaAmountElement.textContent = formatNumberForUI(newTaxAmount);
+                }
+                if (cartMpFeeElement) {
+                    cartMpFeeElement.textContent = formatNumberForUI(newMpFeeAmount);
+                }
+                if (cartFinalTotalElement) {
+                    cartFinalTotalElement.textContent = formatNumberForUI(newFinalTotal);
                 }
 
+                if (mercadopagoAmountInput) {
+                    mercadopagoAmountInput.value = newFinalTotal; 
+                }
 
-                
                 if (cartIsEmpty) {
-                    cartItemsBody.innerHTML = ''; 
+                    cartItemsBody.innerHTML = ''; // Limpiar el cuerpo de la tabla
 
                     if (cartTable) { 
                         cartTable.style.display = 'none';
@@ -863,41 +918,38 @@ a {
                     }
                     
                     if (cartActionsContainer) {
-                        cartActionsContainer.style.display = 'none';
+                        cartActionsContainer.style.display = 'none'; // Ocultar los botones de pago
                     }
                     
+                    // Mostrar el botón de "Seguir Comprando" que está fuera del contenedor principal si el carrito está vacío
                     document.querySelector('.cart-container > .cart-actions:last-of-type').style.display = 'flex';
-
 
                 } else {
                     if (cartTable) { 
                         cartTable.style.display = 'table'; 
                     }
                     if (cartSummary) { 
-                        cartSummary.style.display = 'block';
+                        cartSummary.style.display = 'flex'; // Cambiado a flex para el nuevo estilo
                     }
                     if (emptyCartMessage) { 
                         emptyCartMessage.style.display = 'none';
                     }
                     
                     if (cartActionsContainer) {
-                        cartActionsContainer.style.display = 'flex';
+                        cartActionsContainer.style.display = 'flex'; // Mostrar los botones de pago
                     }
                     
+                    // Ocultar el botón de "Seguir Comprando" si el carrito no está vacío
                     document.querySelector('.cart-container > .cart-actions:last-of-type').style.display = 'none';
-
                 }
             }
-
-
             
             cartItemsBody.addEventListener('click', function(event) {
                 const target = event.target;
-                const productId = target.dataset.productId;
+                const productId = target.dataset.productId; // Esto ahora es $item['id']
 
                 if (!productId) return; 
 
-                
                 if (target.classList.contains('increase-quantity') || target.classList.contains('decrease-quantity')) {
                     const quantityInput = target.closest('.quantity-controls').querySelector('.quantity-input');
                     let newQuantity = parseInt(quantityInput.value);
@@ -913,7 +965,6 @@ a {
                             return; 
                         }
                     }
-
                     
                     fetch('{{ route('cart.update') }}', {
                         method: 'POST',
@@ -923,7 +974,7 @@ a {
                             'Accept': 'application/json'
                         },
                         body: JSON.stringify({
-                            product_id: productId,
+                            cart_item_id: productId, // Se envía el ID que obtuvimos de data-product-id
                             quantity: newQuantity
                         })
                     })
@@ -935,8 +986,16 @@ a {
                     })
                     .then(data => {
                         console.log('Cantidad actualizada:', data);
-                        
-                        updateCartUI(productId, data.item.quantity, data.item.subtotal, data.total, data.cartCount);
+                        updateCartUI(
+                            productId, 
+                            data.item.quantity, 
+                            data.item.subtotal_item, 
+                            data.subtotal, 
+                            data.iva_amount, 
+                            data.mp_fee_amount, 
+                            data.final_total, 
+                            data.cartCount
+                        );
                         getCartCount(); 
                     })
                     .catch(error => {
@@ -944,7 +1003,6 @@ a {
                         alert('Hubo un error al actualizar la cantidad: ' + error.message);
                     });
                 }
-
                 
                 if (target.classList.contains('remove-button')) {
                     if (!confirm('¿Estás seguro de que quieres eliminar este producto del carrito?')) {
@@ -958,7 +1016,7 @@ a {
                             'X-CSRF-TOKEN': csrfToken,
                             'Accept': 'application/json'
                         },
-                        body: JSON.stringify({ product_id: productId })
+                        body: JSON.stringify({ cart_item_id: productId }) // Se envía el ID que obtuvimos de data-product-id
                     })
                     .then(response => {
                         if (!response.ok) {
@@ -968,8 +1026,16 @@ a {
                     })
                     .then(data => {
                         console.log('Producto eliminado:', data);
-                        
-                        updateCartUI(productId, 0, 0, data.total, data.cartCount); 
+                        updateCartUI(
+                            productId, 
+                            0, // Cantidad 0 para indicar que se eliminó
+                            0, // Subtotal de item 0
+                            data.subtotal, 
+                            data.iva_amount, 
+                            data.mp_fee_amount, 
+                            data.final_total, 
+                            data.cartCount
+                        ); 
                         getCartCount(); 
                     })
                     .catch(error => {
@@ -978,12 +1044,11 @@ a {
                     });
                 }
             });
-
             
             cartItemsBody.addEventListener('change', function(event) {
                 const target = event.target;
                 if (target.classList.contains('quantity-input')) {
-                    const productId = target.dataset.productId;
+                    const productId = target.dataset.productId; // Esto ahora es $item['id']
                     let newQuantity = parseInt(target.value);
 
                     if (isNaN(newQuantity) || newQuantity < 0) {
@@ -1006,7 +1071,7 @@ a {
                             'Accept': 'application/json'
                         },
                         body: JSON.stringify({
-                            product_id: productId,
+                            cart_item_id: productId, // Se envía el ID que obtuvimos de data-product-id
                             quantity: newQuantity
                         })
                     })
@@ -1018,8 +1083,16 @@ a {
                     })
                     .then(data => {
                         console.log('Cantidad actualizada:', data);
-                        
-                        updateCartUI(productId, data.item.quantity, data.item.subtotal, data.total, data.cartCount);
+                        updateCartUI(
+                            productId, 
+                            data.item.quantity, 
+                            data.item.subtotal_item, 
+                            data.subtotal, 
+                            data.iva_amount, 
+                            data.mp_fee_amount, 
+                            data.final_total, 
+                            data.cartCount
+                        );
                         getCartCount(); 
                     })
                     .catch(error => {
@@ -1029,15 +1102,17 @@ a {
                 }
             });
 
-            
-            if (mercadopagoDescriptionInput) {
-                
-                
-                
-            }
-
-            
-            updateCartUI(null, null, null, {{ $total }}, {{ empty($cartItems) ? 0 : count($cartItems) }});
+            // Inicializar la UI con los datos que vienen del servidor (al cargar la página)
+            updateCartUI(
+                null, // No es para un producto específico al iniciar
+                null, 
+                null, 
+                {{ $subtotal }}, // Subtotal de productos del backend
+                {{ $iva_amount }}, // IVA del backend
+                {{ $mp_fee_amount }}, // Comisión MP del backend
+                {{ $final_total }}, // Total final del backend
+                {{ empty($cartItems) ? 0 : $cartItems->sum('quantity') }} // Conteos del backend
+            );
         });
     </script>
 </body>

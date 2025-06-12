@@ -13,6 +13,8 @@ class Order extends Model
         'user_id',
         'total',
         'status',
+        'iva_amount',       
+        'mp_fee_amount',    
         
     ];
 
