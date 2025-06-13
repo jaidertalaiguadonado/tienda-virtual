@@ -44,8 +44,8 @@ return [
     'mercadopago' => [
         // Selecciona el token de acceso basado en la variable MERCADOPAGO_ENV
         'access_token' => env('MERCADOPAGO_ENV') === 'production'
-            ? env('MERCADOPAGO_ACCESS_TOKEN_PROD')
-            : env('MERCADOPAGO_ACCESS_TOKEN_SANDBOX'),
+            ? env('MERCADOPAGO_ACCESS_TOKEN')
+            : env('MERCADOPAGO_ACCESS_TOKEN'),
 
         // Selecciona la clave pública basada en la variable MERCADOPAGO_ENV
         'public_key' => env('MERCADOPAGO_ENV') === 'production'
