@@ -15,44 +15,291 @@
     {{-- Si tienes un archivo CSS para el carrito, agrégalo aquí --}}
     {{-- <link rel="stylesheet" href="{{ asset('css/cart.css') }}"> --}}
     <style>
-        /* Estilos básicos para el carrito para que se vea algo */
-        body { font-family: 'Open Sans', sans-serif; margin: 0; background-color: #f4f4f4; }
-        .navbar { background-color: #333; color: white; padding: 1em; display: flex; justify-content: space-between; align-items: center; }
-        .navbar-brand { color: white; text-decoration: none; font-size: 1.5em; }
-        .navbar-link { color: white; text-decoration: none; margin-left: 1em; }
-        .navbar-links { display: flex; }
-        .navbar-links-mobile { display: none; /* Oculto por defecto, se muestra con JS para móviles */ }
-        .menu-toggle { display: none; /* Oculto por defecto, se muestra con JS para móviles */ }
-        .logout-button-navbar { background: none; border: none; color: white; cursor: pointer; font-size: 1em; margin-left: 1em; }
+.footer {
+    background-color: var(--primary-color);
+    color: var(--button-text);
+    padding: 1.5rem 2rem;
+    text-align: center;
+    font-size: 0.9rem;
+    border-top-left-radius: 2rem;
+    border-top-right-radius: 2rem;
+    margin-top: 4rem;
+    flex-shrink: 0;
+}
 
-        .cart-container { max-width: 960px; margin: 2em auto; padding: 1em; background-color: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #333; margin-bottom: 1.5em; }
-        .cart-table { width: 100%; border-collapse: collapse; margin-bottom: 2em; }
-        .cart-table th, .cart-table td { border: 1px solid #ddd; padding: 0.8em; text-align: left; }
-        .cart-table th { background-color: #f8f8f8; }
-        .cart-table img { vertical-align: middle; margin-right: 0.5em; }
-        .quantity-control { display: flex; align-items: center; }
-        .quantity-control button { background-color: #007bff; color: white; border: none; padding: 0.5em 0.8em; cursor: pointer; border-radius: 4px; font-size: 1em; }
-        .quantity-control input { width: 40px; text-align: center; margin: 0 0.5em; border: 1px solid #ccc; border-radius: 4px; padding: 0.4em; }
-        .remove-item { background-color: #dc3545; color: white; border: none; padding: 0.5em 1em; cursor: pointer; border-radius: 4px; }
-        .cart-summary { background-color: #f9f9f9; border: 1px solid #eee; padding: 1.5em; border-radius: 8px; margin-top: 1em; display: flex; flex-direction: column; align-items: flex-end; }
-        .cart-summary p { margin: 0.5em 0; font-size: 1.1em; }
-        .cart-summary strong { font-size: 1.3em; color: #007bff; }
-        .empty-cart-message { text-align: center; margin-top: 2em; font-size: 1.2em; color: #666; }
-        .cart-actions { display: flex; justify-content: space-between; margin-top: 2em; }
-        .continue-shopping-button, .mercadopago-pay-button { background-color: #28a745; color: white; padding: 0.8em 1.5em; text-decoration: none; border-radius: 4px; font-size: 1.1em; border: none; cursor: pointer; }
-        .mercadopago-pay-button { background-color: #007bff; }
-        .footer { text-align: center; padding: 1em; background-color: #333; color: white; margin-top: 2em; }
-        /* Media queries para móviles */
-        @media (max-width: 768px) {
-            .navbar-links { display: none; }
-            .navbar-links-mobile { display: flex; flex-direction: column; position: absolute; top: 60px; left: 0; width: 100%; background-color: #333; padding: 1em 0; z-index: 1000; }
-            .navbar-links-mobile.active { display: flex; }
-            .navbar-link, .logout-button-navbar { width: 100%; text-align: center; padding: 0.5em 0; }
-            .menu-toggle { display: block; background: none; border: none; color: white; font-size: 1.5em; cursor: pointer; }
-            .cart-actions { flex-direction: column; align-items: center; }
-            .continue-shopping-button, .mercadopago-pay-button { width: 80%; margin-bottom: 1em; }
-        }
+.footer p {
+    margin: 0;
+    opacity: 0.8;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .navbar {
+        padding: 1rem 1rem;
+        flex-wrap: wrap;
+    }
+    .navbar-brand {
+        font-size: 1.6rem;
+        margin-right: auto;
+    }
+    .navbar-links {
+        display: none;
+    }
+    .menu-toggle {
+        display: block;
+    }
+
+    .cart-container {
+        margin: 2rem 1rem;
+        padding: 1.5rem;
+    }
+
+    .cart-title {
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .cart-table, .cart-table tbody, .cart-table tr, .cart-table td, .cart-table th {
+        display: block;
+        width: 100%;
+    }
+
+    .cart-table thead {
+        display: none;
+    }
+
+    .cart-table tr {
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1rem;
+        box-sizing: border-box;
+    }
+
+    .cart-table td {
+        border-bottom: none;
+        text-align: left;
+        padding: 0.4rem 0;
+        position: relative;
+        width: 100%;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 0.5rem;
+        box-sizing: border-box;
+    }
+
+    .cart-table td:before {
+        content: attr(data-label);
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--text-light);
+        font-size: 0.75rem;
+        min-width: 80px;
+        flex-shrink: 0;
+    }
+
+    .cart-table td:first-child {
+        text-align: left;
+        flex-basis: 100%;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.8rem;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        padding-top: 0.5rem;
+        justify-content: flex-start;
+        gap: 0;
+    }
+
+    .cart-table td:first-child:before {
+        content: "";
+        display: none;
+    }
+
+    .cart-item-image {
+        width: 60px;
+        height: 60px;
+        margin-right: 1rem;
+    }
+
+    .cart-item-name {
+        flex-grow: 1;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+
+    .quantity-controls {
+        justify-content: flex-start;
+        width: auto;
+        margin-top: 0.5rem;
+        flex-basis: auto;
+        flex-grow: 1;
+    }
+
+    .quantity-input {
+        width: 50px;
+        padding: 0.4rem;
+        font-size: 1rem;
+    }
+    .quantity-button {
+        width: 30px;
+        height: 30px;
+        font-size: 1.2rem;
+    }
+
+    .remove-button {
+        width: 100%;
+        margin-top: 0.8rem;
+        align-self: center;
+        padding: 0.6rem 1rem;
+        font-size: 0.95rem;
+    }
+    .cart-table td[data-label="Acción:"] {
+        border-top: 1px dashed var(--border-color);
+        margin-top: 1rem;
+        padding-top: 1rem;
+        justify-content: center;
+    }
+    .cart-table td[data-label="Acción:"]:before {
+        display: none;
+    }
+
+    .cart-summary {
+        font-size: 1.5rem;
+        text-align: center; /* This might override the flex justification, but for mobile it might be desired for the whole summary block */
+        padding-top: 1rem;
+    }
+
+    /* Keep the default flex behavior for summary items */
+    .cart-summary div {
+        justify-content: space-between; /* Ensure content is still justified */
+        text-align: left; /* Ensure text labels are left-aligned */
+    }
+
+
+    #cart-total {
+        display: block;
+        margin-left: 0;
+        margin-top: 0.5rem;
+    }
+
+    .empty-cart-message {
+        font-size: 1.2rem;
+    }
+
+    .footer {
+        padding: 1.5rem 1rem;
+        border-top-left-radius: 1rem;
+        border-top-right-radius: 1rem;
+        margin-top: 3rem;
+    }
+
+    .cart-actions {
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .cart-actions .continue-shopping-button,
+    .cart-actions .mercadopago-pay-button,
+    .cart-actions form {
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        font-size: 14px;
+    }
+
+    .navbar {
+        padding: 0.8rem 0.8rem;
+    }
+
+    .navbar-brand {
+        font-size: 1.4rem;
+    }
+
+    .cart-title {
+        font-size: 1.6rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .cart-table tr {
+        padding: 0.8rem;
+    }
+
+    .cart-table td {
+        padding: 0.3rem 0;
+        gap: 0.3rem;
+    }
+
+    .cart-table td:before {
+        font-size: 0.7rem;
+        min-width: 65px;
+    }
+
+    .cart-table td:first-child {
+        padding-bottom: 0.6rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .cart-item-image {
+        width: 45px;
+        height: 45px;
+        margin-right: 0.8rem;
+    }
+
+    .quantity-controls {
+        gap: 0.2rem;
+    }
+    .quantity-input {
+        width: 40px;
+        padding: 0.25rem;
+        font-size: 0.9rem;
+    }
+    .quantity-button {
+        width: 28px;
+        height: 28px;
+        font-size: 1.1rem;
+    }
+
+    .remove-button {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.85rem;
+    }
+    /*solucion pcp */
+
+    .cart-table td[data-label="Acción:"] {
+        margin-top: 0.8rem;
+        padding-top: 0.8rem;
+    }
+
+    .cart-summary {
+        font-size: 1.2rem;
+        padding-top: 0.8rem;
+    }
+
+    .footer {
+        padding: 1rem 0.8rem;
+        margin-top: 2rem;
+    }
+
+    .cart-actions .continue-shopping-button,
+    .cart-actions .mercadopago-pay-button,
+    .cart-actions form {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9rem;
+        max-width: 250px;
+    }
+}
+
+
     </style>
 </head>
 <body>
