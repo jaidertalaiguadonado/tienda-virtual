@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'Mi Tienda') }}</title>
-        @vite(['resources/js/app.js'])
+    @vite(['resources/js/app.js'])
+</head>
     <style>
 :root {
     --primary-color: #007BFF;
@@ -736,7 +737,7 @@ a {
     </nav>
 
     <div class="cart-container">
-        <h1>Tu Carrito de Compras</h1>
+        <h1 class="cart-title">Tu Carrito de Compras</h1>
 
         {{-- La tabla del carrito se mostrará/ocultará con JavaScript --}}
         <table class="cart-table" style="display: {{ empty($cartItems) ? 'none' : 'table' }};">
@@ -753,23 +754,21 @@ a {
                 @foreach($cartItems as $item)
                     <tr data-id="{{ $item['id'] }}"> {{-- data-id es el ID del CartItem (logueado) o product_id (invitado) --}}
                         <td data-label="Producto:">
-                            <img src="{{ asset($item['image_url']) }}" alt="{{ $item['name'] }}" width="50">
-                            {{ $item['name'] }}
+                            <img src="{{ asset($item['image_url']) }}" alt="{{ $item['name'] }}" class="cart-item-image">
+                            <span class="cart-item-name">{{ $item['name'] }}</span>
                         </td>
                         {{-- Utiliza $item['subtotal_item_gross'] / $item['quantity'] para el precio unitario bruto --}}
                         <td data-label="Precio Unitario:">${{ number_format($item['subtotal_item_gross'] / $item['quantity'], 2, ',', '.') }}</td>
                         <td data-label="Cantidad:">
-                            {{-- INICIO DEL CÓDIGO CORREGIDO PARA EL CONTROL DE CANTIDAD --}}
                             <div class="quantity-controls">
                                 <button type="button" class="quantity-button decrease-quantity" data-id="{{ $item['id'] }}">-</button>
                                 <input type="number" value="{{ $item['quantity'] }}" min="0" class="quantity-input item-quantity-input" data-id="{{ $item['id'] }}">
                                 <button type="button" class="quantity-button increase-quantity" data-id="{{ $item['id'] }}">+</button>
                             </div>
-                            {{-- FIN DEL CÓDIGO CORREGIDO PARA EL CONTROL DE CANTIDAD --}}
                         </td>
                         <td class="item-subtotal-gross" data-id="{{ $item['id'] }}" data-label="Subtotal:">${{ number_format($item['subtotal_item_gross'], 2, ',', '.') }}</td>
                         <td data-label="Acción:">
-                            <button type="button" class="remove-item" data-id="{{ $item['id'] }}">Eliminar</button>
+                            <button type="button" class="remove-button" data-id="{{ $item['id'] }}">Eliminar</button>
                         </td>
                     </tr>
                 @endforeach
@@ -782,7 +781,7 @@ a {
             <p>IVA Productos ({{ \App\Http\Controllers\CartController::IVA_RATE * 100 }}%): $<span id="iva_products_amount">{{ number_format($iva_products_amount, 2, ',', '.') }}</span></p>
             <p>Subtotal Productos (con IVA): $<span id="subtotal_gross_products">{{ number_format($subtotal_gross_products, 2, ',', '.') }}</span></p>
             <p>Comisión Mercado Pago: $<span id="mp_fee_amount">{{ number_format($mp_fee_amount, 2, ',', '.') }}</span></p>
-            <p><strong>Total Final a Pagar: $<span id="final_total">{{ number_format($final_total, 2, ',', '.') }}</span></strong></p>
+            <p class="final-total-row"><strong>Total Final a Pagar: $<span id="final_total">{{ number_format($final_total, 2, ',', '.') }}</span></strong></p>
         </div>
 
         {{-- Mensaje de carrito vacío --}}
@@ -1004,7 +1003,8 @@ a {
                         sendCartRequest('{{ route('cart.update') }}', 'POST', { id: itemId, quantity: newQuantity });
                     }
                     
-                    if (target.classList.contains('remove-item')) {
+                    // CAMBIO: Asegúrate de que el botón de eliminar tenga la clase 'remove-button' en el HTML
+                    if (target.classList.contains('remove-button')) { 
                         // No usar confirm() directamente. Si necesitas confirmación, usa un modal.
                         // Por ahora, solo envía la petición. El backend maneja el resultado.
                         sendCartRequest('{{ route('cart.remove') }}', 'POST', { id: itemId });
