@@ -14,8 +14,7 @@
     @vite(['resources/js/app.js'])
 
     <style>
-
-       :root {
+:root {
     --primary-color: #007BFF;
     --primary-light: #66B2FF;
     --secondary-color: #17A2B8;
@@ -290,8 +289,8 @@ a {
 
 /* Desglose de Totales */
 .cart-summary {
-    background-color: var(--background-light); /* Usar variable para consistencia */
-    border: 1px solid var(--border-color); /* Usar variable para consistencia */
+    background-color: var(--background-light);
+    border: 1px solid var(--border-color);
     padding: 1.5rem;
     border-radius: 8px;
     margin-top: 2rem;
@@ -306,14 +305,14 @@ a {
     justify-content: space-between;
     align-items: center;
     padding-bottom: 0.5rem;
-    border-bottom: 1px dashed #e0e0e0; /* Considerar una variable si este color se repite */
+    border-bottom: 1px dashed #e0e0e0;
 }
 
 .cart-summary div:last-child {
     border-bottom: none;
     font-weight: bold;
     font-size: 1.3rem;
-    color: var(--success-color); /* Usar variable para el color verde */
+    color: var(--success-color);
 }
 
 /* Old #cart-total style - likely not needed with new summary structure */
@@ -343,18 +342,20 @@ a {
 .cart-actions .continue-shopping-button,
 .cart-actions .mercadopago-pay-button,
 .cart-actions form {
-    flex: 1;
-    min-width: 250px;
-    max-width: 45%;
-    box-sizing: border-box;
+    /* No se aplican flex: 1, min-width, max-width, box-sizing para estos elementos si los vas a quitar o estilizar de forma diferente */
 }
 
 .cart-actions form button {
-    width: 100%;
+    width: 100%; /* Esto podría necesitar ajustarse si no usas los botones principales */
 }
 
+/* Las siguientes reglas de CSS para los botones de "Seguir Comprando" y "Mercado Pago"
+   serán mantenidas en el código, pero si tu intención es que no aparezcan o
+   sean estilizados de forma diferente a lo que ves en las imágenes finales,
+   deberías eliminar o modificar el HTML que los genera, o aplicarles 'display: none;'. */
+
 .continue-shopping-button {
-    background-color: var(--secondary-color); /* Usar variable para consistencia */
+    background-color: var(--secondary-color);
     color: var(--button-text);
     display: inline-block;
     padding: 0.8rem 2rem;
@@ -369,14 +370,14 @@ a {
 }
 
 .continue-shopping-button:hover {
-    background-color: var(--secondary-color); /* Ya está en la variable, solo necesitamos el hover */
-    filter: brightness(0.9); /* Una forma de oscurecerlo sin otra variable */
+    background-color: var(--secondary-color);
+    filter: brightness(0.9);
     transform: translateY(-2px);
 }
 
 .mercadopago-pay-button {
-    background-color: var(--mercadopago-button-color); /* Usar variable */
-    color: var(--mercadopago-text-color); /* Usar variable */
+    background-color: var(--mercadopago-button-color);
+    color: var(--mercadopago-text-color);
     display: inline-block;
     padding: 0.8rem 2rem;
     border-radius: 0.75rem;
@@ -390,7 +391,7 @@ a {
 }
 
 .mercadopago-pay-button:hover {
-    background-color: var(--mercadopago-button-hover); /* Usar variable */
+    background-color: var(--mercadopago-button-hover);
     transform: translateY(-2px);
 }
 
@@ -549,14 +550,14 @@ a {
 
     .cart-summary {
         font-size: 1.5rem;
-        text-align: center; /* This might override the flex justification, but for mobile it might be desired for the whole summary block */
+        text-align: center;
         padding-top: 1rem;
     }
 
     /* Keep the default flex behavior for summary items */
     .cart-summary div {
-        justify-content: space-between; /* Ensure content is still justified */
-        text-align: left; /* Ensure text labels are left-aligned */
+        justify-content: space-between;
+        text-align: left;
     }
 
 
@@ -586,9 +587,9 @@ a {
     .cart-actions .continue-shopping-button,
     .cart-actions .mercadopago-pay-button,
     .cart-actions form {
-        width: 100%;
-        max-width: 300px;
-        margin: 0 auto;
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9rem;
+        max-width: 250px;
     }
 }
 
@@ -678,7 +679,6 @@ a {
         max-width: 250px;
     }
 }
-
 
     </style>
 
