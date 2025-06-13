@@ -45,7 +45,7 @@ class RouteServiceProvider extends ServiceProvider
      * Get the path the user should be redirected to after authentication.
      *
      * Este método se encarga de la lógica de redirección después de que un usuario
-     * ha iniciado sesión con éxito.
+     * ha iniciado sesión con éxito. a qu se joda
      */
     protected function redirectTo(): string
     {
