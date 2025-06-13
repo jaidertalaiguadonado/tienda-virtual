@@ -23,7 +23,7 @@
     --logout-light: #E65F6C;
     --stock-available: #28A745;
     --stock-unavailable: #DC3545;
-    --remove-button-color: #DC3545;
+    --remove-button-color: #DC3545; /* ¡Ya estaba definido como rojo! */
     --remove-button-hover: #E65F6C;
     --quantity-button-color: #007BFF;
     --quantity-button-hover: #66B2FF;
@@ -177,7 +177,7 @@ a {
 .cart-title {
     font-size: 2.5rem;
     font-weight: 800;
-    color: var(--primary-color);
+    color: var(--primary-color); /* CAMBIO: Color azul para el título */
     margin-bottom: 2.5rem;
     text-align: center;
 }
@@ -207,6 +207,13 @@ a {
     font-size: 1rem;
     color: var(--text-dark);
 }
+
+/* CAMBIO: Aplicar color azul a la celda del precio unitario */
+.cart-table td[data-label="Precio Unitario:"] {
+    color: var(--primary-color);
+    font-weight: 600; /* Añadir bold para que resalte más */
+}
+
 
 .cart-item-image {
     width: 60px;
@@ -263,11 +270,20 @@ a {
     border-radius: 0.3rem;
     text-align: center;
     font-size: 1rem;
+    -moz-appearance: textfield; /* Para Firefox */
+}
+/* Ocultar flechas en inputs tipo number para Chrome, Safari, Edge, Opera */
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
+
 .remove-button {
-    background-color: var(--remove-button-color);
-    color: var(--button-text);
+    /* Ya estaba definido para usar --remove-button-color que es rojo y button-text que es blanco */
+    background-color: var(--remove-button-color); /* Esto es #DC3545 (rojo) */
+    color: var(--button-text); /* Esto es #ffffff (blanco) */
     border: none;
     border-radius: 0.5rem;
     padding: 0.5rem 1rem;
@@ -303,18 +319,13 @@ a {
     border-bottom: 1px dashed #e0e0e0;
 }
 
+/* CAMBIO: Aplicar color azul a la última línea del resumen (Total Final a Pagar) */
 .cart-summary div:last-child {
     border-bottom: none;
     font-weight: bold;
     font-size: 1.3rem;
-    color: var(--success-color);
+    color: var(--primary-color); /* CAMBIO: Usar primary-color para el total final */
 }
-
-/* Old #cart-total style - likely not needed with new summary structure */
-/* #cart-total {
-    color: var(--primary-color);
-    margin-left: 1rem;
-} */
 
 
 .empty-cart-message {
@@ -343,11 +354,6 @@ a {
 .cart-actions form button {
     width: 100%; /* Esto podría necesitar ajustarse si no usas los botones principales */
 }
-
-/* Las siguientes reglas de CSS para los botones de "Seguir Comprando" y "Mercado Pago"
-   serán mantenidas en el código, pero si tu intención es que no aparezcan o
-   sean estilizados de forma diferente a lo que ves en las imágenes finales,
-   deberías eliminar o modificar el HTML que los genera, o aplicarles 'display: none;'. */
 
 .continue-shopping-button {
     background-color: var(--secondary-color);
@@ -654,6 +660,10 @@ a {
     .cart-table td[data-label="Acción:"] {
         margin-top: 0.8rem;
         padding-top: 0.8rem;
+    }
+
+    .cart-table td[data-label="Acción:"]:before {
+        display: none;
     }
 
     .cart-summary {
