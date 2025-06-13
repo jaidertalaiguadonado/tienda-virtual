@@ -1,10 +1,16 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ config('app.name', 'Mi Tienda') }}</title>
+
+    <title>{{ config('app.name', 'Tienda JD') }} - Carrito</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
     @vite(['resources/js/app.js'])
 
     <style>
@@ -22,7 +28,7 @@
     --logout-light: #E65F6C;
     --stock-available: #28A745;
     --stock-unavailable: #DC3545;
-    --remove-button-color: #DC3545; /* ¡Ya estaba definido como rojo! */
+    --remove-button-color: #DC3545;
     --remove-button-hover: #E65F6C;
     --quantity-button-color: #007BFF;
     --quantity-button-hover: #66B2FF;
@@ -176,7 +182,7 @@ a {
 .cart-title {
     font-size: 2.5rem;
     font-weight: 800;
-    color: var(--primary-color); /* CAMBIO: Color azul para el título */
+    color: var(--primary-color);
     margin-bottom: 2.5rem;
     text-align: center;
 }
@@ -206,13 +212,6 @@ a {
     font-size: 1rem;
     color: var(--text-dark);
 }
-
-/* CAMBIO: Aplicar color azul a la celda del precio unitario */
-.cart-table td[data-label="Precio Unitario:"] {
-    color: var(--primary-color);
-    font-weight: 600; /* Añadir bold para que resalte más */
-}
-
 
 .cart-item-image {
     width: 60px;
@@ -269,20 +268,11 @@ a {
     border-radius: 0.3rem;
     text-align: center;
     font-size: 1rem;
-    -moz-appearance: textfield; /* Para Firefox */
 }
-/* Ocultar flechas en inputs tipo number para Chrome, Safari, Edge, Opera */
-.quantity-input::-webkit-outer-spin-button,
-.quantity-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
 
 .remove-button {
-    /* Ya estaba definido para usar --remove-button-color que es rojo y button-text que es blanco */
-    background-color: var(--remove-button-color); /* Esto es #DC3545 (rojo) */
-    color: var(--button-text); /* Esto es #ffffff (blanco) */
+    background-color: var(--remove-button-color);
+    color: var(--button-text);
     border: none;
     border-radius: 0.5rem;
     padding: 0.5rem 1rem;
@@ -318,13 +308,18 @@ a {
     border-bottom: 1px dashed #e0e0e0;
 }
 
-/* CAMBIO: Aplicar color azul a la última línea del resumen (Total Final a Pagar) */
 .cart-summary div:last-child {
     border-bottom: none;
     font-weight: bold;
     font-size: 1.3rem;
-    color: var(--primary-color); /* CAMBIO: Usar primary-color para el total final */
+    color: var(--success-color);
 }
+
+/* Old #cart-total style - likely not needed with new summary structure */
+/* #cart-total {
+    color: var(--primary-color);
+    margin-left: 1rem;
+} */
 
 
 .empty-cart-message {
@@ -353,6 +348,11 @@ a {
 .cart-actions form button {
     width: 100%; /* Esto podría necesitar ajustarse si no usas los botones principales */
 }
+
+/* Las siguientes reglas de CSS para los botones de "Seguir Comprando" y "Mercado Pago"
+   serán mantenidas en el código, pero si tu intención es que no aparezcan o
+   sean estilizados de forma diferente a lo que ves en las imágenes finales,
+   deberías eliminar o modificar el HTML que los genera, o aplicarles 'display: none;'. */
 
 .continue-shopping-button {
     background-color: var(--secondary-color);
@@ -661,10 +661,6 @@ a {
         padding-top: 0.8rem;
     }
 
-    .cart-table td[data-label="Acción:"]:before {
-        display: none;
-    }
-
     .cart-summary {
         font-size: 1.2rem;
         padding-top: 0.8rem;
@@ -684,6 +680,10 @@ a {
     }
 }
     </style>
+
+
+
+
 </head>
 <body>
     <nav class="navbar">
@@ -737,7 +737,7 @@ a {
     </nav>
 
     <div class="cart-container">
-        <h1 class="cart-title">Tu Carrito de Compras</h1>
+        <h1>Tu Carrito de Compras</h1>
 
         {{-- La tabla del carrito se mostrará/ocultará con JavaScript --}}
         <table class="cart-table" style="display: {{ empty($cartItems) ? 'none' : 'table' }};">
@@ -753,22 +753,22 @@ a {
             <tbody id="cart-items-body">
                 @foreach($cartItems as $item)
                     <tr data-id="{{ $item['id'] }}"> {{-- data-id es el ID del CartItem (logueado) o product_id (invitado) --}}
-                        <td data-label="Producto:">
-                            <img src="{{ asset($item['image_url']) }}" alt="{{ $item['name'] }}" class="cart-item-image">
-                            <span class="cart-item-name">{{ $item['name'] }}</span>
+                        <td>
+                            <img src="{{ asset($item['image_url']) }}" alt="{{ $item['name'] }}" width="50">
+                            {{ $item['name'] }}
                         </td>
                         {{-- Utiliza $item['subtotal_item_gross'] / $item['quantity'] para el precio unitario bruto --}}
-                        <td data-label="Precio Unitario:">${{ number_format($item['subtotal_item_gross'] / $item['quantity'], 2, ',', '.') }}</td>
-                        <td data-label="Cantidad:">
-                            <div class="quantity-controls">
-                                <button type="button" class="quantity-button decrease-quantity" data-id="{{ $item['id'] }}">-</button>
-                                <input type="number" value="{{ $item['quantity'] }}" min="0" class="quantity-input item-quantity-input" data-id="{{ $item['id'] }}">
-                                <button type="button" class="quantity-button increase-quantity" data-id="{{ $item['id'] }}">+</button>
+                        <td>${{ number_format($item['subtotal_item_gross'] / $item['quantity'], 2, ',', '.') }}</td>
+                        <td>
+                            <div class="quantity-control">
+                                <button type="button" class="decrease-quantity" data-id="{{ $item['id'] }}">-</button>
+                                <input type="number" value="{{ $item['quantity'] }}" min="0" class="item-quantity-input" data-id="{{ $item['id'] }}">
+                                <button type="button" class="increase-quantity" data-id="{{ $item['id'] }}">+</button>
                             </div>
                         </td>
-                        <td class="item-subtotal-gross" data-id="{{ $item['id'] }}" data-label="Subtotal:">${{ number_format($item['subtotal_item_gross'], 2, ',', '.') }}</td>
-                        <td data-label="Acción:">
-                            <button type="button" class="remove-button" data-id="{{ $item['id'] }}">Eliminar</button>
+                        <td class="item-subtotal-gross" data-id="{{ $item['id'] }}">${{ number_format($item['subtotal_item_gross'], 2, ',', '.') }}</td>
+                        <td>
+                            <button type="button" class="remove-item" data-id="{{ $item['id'] }}">Eliminar</button>
                         </td>
                     </tr>
                 @endforeach
@@ -781,7 +781,7 @@ a {
             <p>IVA Productos ({{ \App\Http\Controllers\CartController::IVA_RATE * 100 }}%): $<span id="iva_products_amount">{{ number_format($iva_products_amount, 2, ',', '.') }}</span></p>
             <p>Subtotal Productos (con IVA): $<span id="subtotal_gross_products">{{ number_format($subtotal_gross_products, 2, ',', '.') }}</span></p>
             <p>Comisión Mercado Pago: $<span id="mp_fee_amount">{{ number_format($mp_fee_amount, 2, ',', '.') }}</span></p>
-            <p class="final-total-row"><strong>Total Final a Pagar: $<span id="final_total">{{ number_format($final_total, 2, ',', '.') }}</span></strong></p>
+            <p><strong>Total Final a Pagar: $<span id="final_total">{{ number_format($final_total, 2, ',', '.') }}</span></strong></p>
         </div>
 
         {{-- Mensaje de carrito vacío --}}
@@ -809,7 +809,7 @@ a {
         <p>&copy; {{ date('Y') }} {{ config('app.name', 'Mi Tienda') }}. Todos los derechos reservados.</p>
     </footer>
 
-  <script>
+    <script>
         document.addEventListener('DOMContentLoaded', function() {
             const menuToggle = document.querySelector('.menu-toggle');
             const mobileMenu = document.querySelector('.navbar-links-mobile');
@@ -1044,6 +1044,6 @@ a {
             });
         });
     </script>
-
 </body>
 </html>
+
