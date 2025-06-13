@@ -31,7 +31,7 @@ class MercadoPagoController extends Controller
         // LÍNEA DE DEPURACIÓN TEMPORAL - DESCOMENTA PARA VER EL ACCESS TOKEN
         // Una vez que verifiques que el token se carga, VUELVE A COMENTAR O ELIMINAR ESTA LÍNEA
         // ===================================================================
-        // dd('Access Token que Laravel está cargando: ' . ($accessToken ?? 'NULO/VACÍO'));
+        dd('Access Token que Laravel está cargando: ' . ($accessToken ?? 'NULO/VACÍO'));
         // ===================================================================
 
         if (empty($accessToken)) {
