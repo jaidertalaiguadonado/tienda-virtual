@@ -809,7 +809,7 @@ a {
         <p>&copy; {{ date('Y') }} {{ config('app.name', 'Mi Tienda') }}. Todos los derechos reservados.</p>
     </footer>
 
-    <script>
+  <script>
         document.addEventListener('DOMContentLoaded', function() {
             const menuToggle = document.querySelector('.menu-toggle');
             const mobileMenu = document.querySelector('.navbar-links-mobile');
@@ -1003,8 +1003,7 @@ a {
                         sendCartRequest('{{ route('cart.update') }}', 'POST', { id: itemId, quantity: newQuantity });
                     }
                     
-                    // CAMBIO: Asegúrate de que el botón de eliminar tenga la clase 'remove-button' en el HTML
-                    if (target.classList.contains('remove-button')) { 
+                    if (target.classList.contains('remove-item')) {
                         // No usar confirm() directamente. Si necesitas confirmación, usa un modal.
                         // Por ahora, solo envía la petición. El backend maneja el resultado.
                         sendCartRequest('{{ route('cart.remove') }}', 'POST', { id: itemId });
@@ -1045,5 +1044,6 @@ a {
             });
         });
     </script>
+
 </body>
 </html>
