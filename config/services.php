@@ -44,16 +44,17 @@ return [
     'mercadopago' => [
         // Selecciona el token de acceso basado en la variable MERCADOPAGO_ENV
         'access_token' => env('MERCADOPAGO_ENV') === 'production'
-            ? env('MERCADOPAGO_ACCESS_TOKEN')
-            : env('MERCADOPAGO_ACCESS_TOKEN'),
+            ? env('MERCADOPAGO_ACCESS_TOKEN_PRODUCTION')  // Usa el token de PRODUCCIÓN
+            : env('MERCADOPAGO_ACCESS_TOKEN_SANDBOX'), // Usa el token de SANDBOX
 
         // Selecciona la clave pública basada en la variable MERCADOPAGO_ENV
         'public_key' => env('MERCADOPAGO_ENV') === 'production'
-            ? env('MERCADOPAGO_PUBLIC_KEY_PROD')
-            : env('MERCADOPAGO_PUBLIC_KEY_SANDBOX'),
+            ? env('MERCADOPAGO_PUBLIC_KEY_PRODUCTION')    // Usa la clave pública de PRODUCCIÓN
+            : env('MERCADOPAGO_PUBLIC_KEY_SANDBOX'),   // Usa la clave pública de SANDBOX
 
-        // Almacena el entorno actual (production/sandbox)
-        'env' => env('MERCADOPAGO_ENV', 'sandbox'), // 'sandbox' como valor por defecto
+        // Almacena el entorno actual (production/sandbox).
+        // Esto es útil si necesitas acceder al entorno configurado desde otros lugares.
+        'env' => env('MERCADOPAGO_ENV', 'sandbox'), // 'sandbox' como valor por defecto si no está definido en .env
     ],
 
 ];
