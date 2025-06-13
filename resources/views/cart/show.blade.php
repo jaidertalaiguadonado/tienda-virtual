@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'Mi Tienda') }}</title>
-    {{-- Aquí irían tus enlaces a CSS --}}
-    {{-- <link rel="stylesheet" href="{{ asset('css/app.css') }}"> --}}
-    {{-- O un estilo incrustado si es para prueba --}}
+        @vite(['resources/js/app.js'])
     <style>
 :root {
     --primary-color: #007BFF;
