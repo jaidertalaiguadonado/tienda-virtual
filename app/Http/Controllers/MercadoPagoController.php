@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use App\Models\Product;
+use Illuminate\Support\Facades\Log; // Asegúrate de tener esto
 
 class MercadoPagoController extends Controller
 {
@@ -98,7 +99,28 @@ class MercadoPagoController extends Controller
         // ===================================================================
         $actualCartItemsForTotals = $this->cartController->getFormattedCartItems();
         $totals = $this->cartController->calculateCartTotals($actualCartItemsForTotals);
+
+        // ===================================================================
+        // AQUÍ ES DONDE AÑADES LA COMISIÓN DE MP COMO UN ITEM ADICIONAL
+        // ===================================================================
+        if ($totals['mp_fee_amount'] > 0) {
+            $mpItems->push([
+                'id' => 'MP_FEE',
+                'title' => 'Comisión de Mercado Pago',
+                'description' => 'Costo por servicio de procesamiento de pago',
+                'quantity' => 1,
+                'unit_price' => (float) $totals['mp_fee_amount'], // La comisión se añade como un único ítem con su valor total
+                'currency_id' => "COP",
+                // Opcional: una imagen genérica si tienes para fees/impuestos
+                // 'picture_url' => asset('images/mercadopago_fee.png'),
+            ]);
+        }
+        // ===================================================================
+
+        // El final_total_to_pay ya no es estrictamente necesario para el parámetro transaction_amount si los ítems suman correctamente.
+        // Sin embargo, mantenerlo para doble verificación o si MP lo requiriera para otros propósitos.
         $final_total_to_pay = $totals['final_total'];
+
 
         // ===================================================================
         // AÑADE ESTO PARA DEPURACIÓN (MANTENER)
@@ -108,8 +130,9 @@ class MercadoPagoController extends Controller
             'iva_productos_calculado' => $totals['iva_products_amount'],
             'subtotal_gross_productos' => $totals['subtotal_gross_products'],
             'comision_mp_total' => $totals['mp_fee_amount'],
-            'total_final_a_pagar' => $totals['final_total'],
+            'total_final_a_pagar_cartcontroller' => $totals['final_total'], // Este es el calculado en el CartController
             'items_enviados_a_mp' => $mpItems->toArray(), // Para ver los precios unitarios enviados a MP (ahora brutos)
+            'total_sum_of_mp_items' => $mpItems->sum(function($item){ return $item['unit_price'] * $item['quantity']; }), // Suma de los items que se enviarán a MP
         ]);
         // ===================================================================
 
@@ -122,7 +145,7 @@ class MercadoPagoController extends Controller
         $preferenceClient = new PreferenceClient();
         try {
             $preferenceData = [
-                "items" => $mpItems->toArray(), // Aquí se usan los $mpItems preparados para Mercado Pago
+                "items" => $mpItems->toArray(), // Aquí se usan los $mpItems que AHORA incluyen la comisión
                 "back_urls" => [
                     "success" => route('mercadopago.success'),
                     "failure" => route('mercadopago.failure'),
@@ -135,10 +158,13 @@ class MercadoPagoController extends Controller
                 "payer" => [
                     "email" => Auth::check() ? Auth::user()->email : 'invitado@ejemplo.com',
                 ],
+                // Es buena práctica mantener el transaction_amount para consistencia,
+                // aunque Mercado Pago a menudo usa la suma de los ítems si están presentes.
+                // Asegúrate de que este valor coincida con la suma de los items que estás enviando.
                 "transaction_amount" => (float) $final_total_to_pay,
             ];
 
-            \Log::info('Mercado Pago Preference Payload:', $preferenceData);
+            \Log::info('Mercado Pago Preference Payload (Final):', $preferenceData);
 
             $response = $preferenceClient->create($preferenceData);
 
@@ -154,7 +180,7 @@ class MercadoPagoController extends Controller
                 $errorDetails = $apiResponse->error->cause ?? [];
             }
 
-            \Log::error('Error de API de Mercado Pago al crear preferencia: ' . $errorMessage, ['details' => $errorDetails, 'exception_code' => $e->getCode()]);
+            \Log::error('Error de API de Mercado Pago al crear preferencia: ' . $errorMessage, ['details' => $errorDetails, 'exception_code' => $e->getCode(), 'api_response_raw' => json_encode($apiResponse)]);
 
             $userMessage = 'Error al crear la preferencia de pago. Por favor, revisa los datos ingresados.';
             if (!empty($errorDetails) && is_array($errorDetails)) {
@@ -233,7 +259,7 @@ class MercadoPagoController extends Controller
                     $errorDetails = $apiResponse->error->cause ?? [];
                 }
 
-                \Log::error('Error de API en Webhook al obtener pago: ' . $errorMessage, ['details' => $errorDetails, 'exception_code' => $e->getCode()]);
+                \Log::error('Error de API en Webhook al obtener pago: ' . $errorMessage, ['details' => $errorDetails, 'exception_code' => $e->getCode(), 'api_response_raw' => json_encode($apiResponse)]);
             } catch (\Exception $e) {
                 \Log::error('Error general en Webhook al procesar: ' . $e->getMessage());
             }

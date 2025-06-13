@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'Mi Tienda') }}</title>
     @vite(['resources/js/app.js'])
-</head>
+
     <style>
 :root {
     --primary-color: #007BFF;
