@@ -27,8 +27,17 @@ class MercadoPagoController extends Controller
 
         $accessToken = config('services.mercadopago.access_token');
 
+        // ===================================================================
+        // LÍNEA DE DEPURACIÓN TEMPORAL - DESCOMENTA PARA VER EL ACCESS TOKEN
+        // Una vez que verifiques que el token se carga, VUELVE A COMENTAR O ELIMINAR ESTA LÍNEA
+        // ===================================================================
+        // dd('Access Token que Laravel está cargando: ' . ($accessToken ?? 'NULO/VACÍO'));
+        // ===================================================================
+
         if (empty($accessToken)) {
             \Log::critical('Mercado Pago Access Token no configurado o es nulo. Verifique su .env y config/services.php');
+            // Si quieres que la aplicación se detenga aquí si el token es nulo, puedes descomentar el siguiente dd:
+            // dd('ERROR CRÍTICO: Mercado Pago Access Token no configurado. Verifique logs.');
         } else {
             MercadoPagoConfig::setAccessToken($accessToken);
         }
