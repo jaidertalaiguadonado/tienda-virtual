@@ -52,53 +52,121 @@ class MercadoPagoController extends Controller
     public function createPaymentPreference(Request $request)
     {
         // ===================================================================
-        // INICIO DE LA MODIFICACIÓN TEMPORAL PARA DEPURACIÓN
-        // TODO el código ORIGINAL que calculaba $cart, $mpItems y $totals
-        // FUE ELIMINADO/SOBREESCRITO por el siguiente bloque TEMPORAL.
+        // CÓDIGO ORIGINAL - ESTO DEBE ESTAR ACTIVO PARA CALCULAR LOS ÍTEMS REALES
+        // ===================================================================
+        $cart = null;
+        $mpItems = collect(); // Ítems formateados específicamente para el payload de Mercado Pago
+
+        if (Auth::check()) {
+            $user = Auth::user();
+            $cart = $user->cart()->with('cartItems.product')->first();
+            if (!$cart) {
+                return back()->with('error', 'Tu carrito no existe o está vacío.');
+            }
+
+            // Construir los ítems para Mercado Pago (con precios brutos)
+            $mpItems = ($cart->cartItems ?? collect())->filter(fn($item) => $item->product)->map(function($item) {
+                $productPriceNet = $item->product->price; // Precio NETO de la DB
+                $productPriceGross = round($productPriceNet * (1 + $this->ivaRate), 2); // Calcular el precio BRUTO para MP
+
+                return [
+                    'id' => $item->product_id,
+                    'title' => $item->product->name,
+                    'description' => Str::limit($item->product->description ?? $item->product->name, 250),
+                    'quantity' => $item->quantity,
+                    'unit_price' => (float) $productPriceGross, // ENVIAR EL PRECIO BRUTO A MERCADO PAGO
+                    'currency_id' => "COP",
+                    'picture_url' => $item->product->image_url ?? asset('images/default_product.png'),
+                ];
+            });
+
+        } else {
+            // Lógica para carrito de sesión (guest)
+            $sessionCart = Session::get('cart', []);
+            $mpItems = collect($sessionCart)->map(function($item) {
+                $product = Product::find($item['id']);
+                $priceNet = $product ? $product->price : ($item['price'] ?? 0); // Asumiendo que el precio del producto es NETO
+                $priceGross = round($priceNet * (1 + $this->ivaRate), 2); // Calcular el precio BRUTO para MP
+
+                return [
+                    'id' => $item['id'],
+                    'title' => $item['name'] ?? 'Producto Desconocido',
+                    'description' => Str::limit($product->description ?? $item['name'] ?? 'Producto', 250),
+                    'quantity' => $item['quantity'],
+                    'unit_price' => (float) $priceGross, // ENVIAR EL PRECIO BRUTO A MERCADO PAGO
+                    'currency_id' => "COP",
+                    'picture_url' => $item['image'] ?? asset('images/default_product.png'),
+                ];
+            });
+        }
+
+        if ($mpItems->isEmpty()) {
+            return back()->with('error', 'Tu carrito está vacío. No se puede proceder con el pago.');
+        }
+
+        // Obtener los ítems formateados del CartController para un cálculo de totales consistente.
+        $actualCartItemsForTotals = $this->cartController->getFormattedCartItems();
+        $totals = $this->cartController->calculateCartTotals($actualCartItemsForTotals);
+
+        // AÑADIR LA COMISIÓN DE MP COMO UN ITEM ADICIONAL
+        if ($totals['mp_fee_amount'] > 0) {
+            $mpItems->push([
+                'id' => 'MP_FEE',
+                'title' => 'Comisión de Mercado Pago',
+                'description' => 'Costo por servicio de procesamiento de pago',
+                'quantity' => 1,
+                'unit_price' => (float) $totals['mp_fee_amount'],
+                'currency_id' => "COP",
+            ]);
+        }
+
+        $final_total_to_pay = $totals['final_total'];
+        // ===================================================================
+        // FIN DEL CÓDIGO ORIGINAL QUE DEBE ESTAR ACTIVO
         // ===================================================================
 
-        $preferenceData = [
-            "items" => [
-                [
-                    "title" => "Producto de Prueba",
-                    "quantity" => 1,
-                    "unit_price" => 100.00, // Un precio simple, positivo
-                    "currency_id" => "COP",
-                ]
-            ],
-            "back_urls" => [
-                "success" => route('mercadopago.success'),
-                "failure" => route('mercadopago.failure'),
-                "pending" => route('mercadopago.pending')
-            ],
-            "auto_return" => "approved",
-            "notification_url" => route('mercadopago.webhook') . '?source_news=webhooks',
-            "external_reference" => 'ORDER-TEST-' . uniqid(),
-            "payer" => [
-                "email" => Auth::check() ? Auth::user()->email : 'invitado@ejemplo.com',
-            ],
-            "statement_descriptor" => "TIENDAJD",
-            "transaction_amount" => 100.00, // Debe coincidir con la suma de los ítems
-        ];
-        // ===================================================================
-        // FIN DE LA MODIFICACIÓN TEMPORAL PARA DEPURACIÓN
-        // ===================================================================
-
 
         // ===================================================================
-        // AÑADE ESTO PARA DEPURACIÓN (MANTENER)
+        // ESTE LOG ES CRÍTICO AHORA - MANTENLO ACTIVO
         // ===================================================================
-        \Log::info('Mercado Pago Preference Payload (FINAL - TEMP TEST):', $preferenceData);
+        \Log::info('Detalles de totales antes de enviar a Mercado Pago:', [
+            'subtotal_net_productos' => $totals['subtotal_net_products'],
+            'iva_productos_calculado' => $totals['iva_products_amount'],
+            'subtotal_gross_productos' => $totals['subtotal_gross_products'],
+            'comision_mp_total' => $totals['mp_fee_amount'],
+            'total_final_a_pagar_cartcontroller' => $totals['final_total'],
+            'items_enviados_a_mp' => $mpItems->toArray(), // ¡Este es el que vamos a revisar en el log!
+            'total_sum_of_mp_items' => $mpItems->sum(function($item){ return $item['unit_price'] * $item['quantity']; }),
+        ]);
         // ===================================================================
 
-        // Asegurarse de que el monto sea válido (este check ahora se hace sobre $preferenceData['transaction_amount'])
-        if ($preferenceData['transaction_amount'] <= 0) {
-            \Log::error('Intento de crear preferencia con monto total <= 0: ' . $preferenceData['transaction_amount']);
+        // Asegurarse de que el monto sea válido
+        if ($final_total_to_pay <= 0) { // Ahora esta condición usa $final_total_to_pay, que sí está definido.
+            \Log::error('Intento de crear preferencia con monto total <= 0: ' . $final_total_to_pay);
             return back()->with('error', 'El monto total a pagar debe ser positivo.');
         }
 
         $preferenceClient = new PreferenceClient();
         try {
+            $preferenceData = [
+                "items" => $mpItems->toArray(), // Aquí se usan los $mpItems REALES
+                "back_urls" => [
+                    "success" => route('mercadopago.success'),
+                    "failure" => route('mercadopago.failure'),
+                    "pending" => route('mercadopago.pending')
+                ],
+                "auto_return" => "approved",
+                "notification_url" => route('mercadopago.webhook') . '?source_news=webhooks',
+                "external_reference" => 'ORDER-' . uniqid(),
+                "statement_descriptor" => "TIENDAJD",
+                "payer" => [
+                    "email" => Auth::check() ? Auth::user()->email : 'invitado@ejemplo.com',
+                ],
+                "transaction_amount" => (float) $final_total_to_pay, // El monto final real
+            ];
+
+            \Log::info('Mercado Pago Preference Payload (Final):', $preferenceData); // Este log es muy útil también
+
             $response = $preferenceClient->create($preferenceData);
 
             return redirect()->away($response->init_point);
