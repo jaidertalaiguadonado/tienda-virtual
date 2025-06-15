@@ -31,6 +31,7 @@ class MercadoPagoController extends Controller
             \Log::critical('Mercado Pago Access Token no configurado o es nulo. Verifique su .env y config/services.php');
         } else {
             MercadoPagoConfig::setAccessToken($accessToken);
+            \Log::info('Mercado Pago Access Token cargado. Longitud: ' . strlen($accessToken) . ' caracteres.');
         }
     }
 
@@ -38,98 +39,141 @@ class MercadoPagoController extends Controller
      * Crea una preferencia de pago en Mercado Pago.
      *
      * @param Request $request
+     * @param bool $debugMode Permite activar el modo de depuración para probar con un producto fijo.
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function createPaymentPreference(Request $request)
+    public function createPaymentPreference(Request $request, $debugMode = false)
     {
-        $cart = null;
         $mpItems = collect(); // Ítems formateados específicamente para el payload de Mercado Pago
+        $payerEmail = Auth::check() ? Auth::user()->email : 'invitado@ejemplo.com';
 
-        if (Auth::check()) {
-            $user = Auth::user();
-            $cart = $user->cart()->with('cartItems.product')->first();
-            if (!$cart) {
-                return back()->with('error', 'Tu carrito no existe o está vacío.');
-            }
+        // --- MODO DE DEPURACIÓN ACTIVO ---
+        if ($debugMode) {
+            \Log::info('*** MODO DE DEPURACIÓN DE MERCADO PAGO ACTIVO ***');
 
-            // Construir los ítems para Mercado Pago (con precios brutos)
-            $mpItems = ($cart->cartItems ?? collect())->filter(fn($item) => $item->product)->map(function($item) {
-                $productPriceNet = (float) $item->product->price; // Precio NETO de la DB
-                // Calcular el precio bruto y redondearlo para asegurar 2 decimales
-                $productPriceGross = round($productPriceNet * (1 + $this->ivaRate), 2);
+            // Definimos un producto de prueba fijo con precio positivo
+            $mpItems->push([
+                'id' => 'DEBUG-PROD-001',
+                'title' => 'Producto de Depuración (10.000 COP)',
+                'description' => 'Producto de prueba para verificar la comunicación con Mercado Pago. Precio incluye IVA.',
+                'quantity' => 1,
+                'unit_price' => 10000.00, // Precio fijo en COP, positivo
+                'currency_id' => "COP",
+                'picture_url' => asset('images/default_product.png'),
+            ]);
 
-                return [
-                    'id' => (string) $item->product_id, // Asegurar que sea string
-                    'title' => $item->product->name,
-                    'description' => Str::limit($item->product->description ?? $item->product->name, 250),
-                    'quantity' => (int) $item->quantity, // Asegurar que sea int
-                    'unit_price' => (float) $productPriceGross, // Lo pasamos como float al final, asegurando el formato
-                    'currency_id' => "COP",
-                    'picture_url' => $item->product->image_url ?? asset('images/default_product.png'),
-                ];
-            });
+            // Email fijo para el pagador en modo depuración
+            $payerEmail = 'debug_user_123@example.com';
+            
+            \Log::info('MP Debug Items:', $mpItems->toArray());
+            \Log::info('MP Debug Payer Email:', ['email' => $payerEmail]);
 
         } else {
-            // Lógica para carrito de sesión (guest)
-            $sessionCart = Session::get('cart', []);
-            $mpItems = collect($sessionCart)->map(function($item) {
-                $product = Product::find($item['id']);
-                $priceNet = $product ? (float) $product->price : (float) ($item['price'] ?? 0); // Asumiendo que el precio del producto es NETO
-                // Calcular el precio bruto y redondearlo para asegurar 2 decimales
-                $priceGross = round($priceNet * (1 + $this->ivaRate), 2);
+            // --- LÓGICA NORMAL DEL CARRITO (si no es modo depuración) ---
+            $cart = null;
 
-                return [
-                    'id' => (string) ($item['id'] ?? uniqid()), // Asegurar que sea string y un fallback
-                    'title' => $item['name'] ?? 'Producto Desconocido',
-                    'description' => Str::limit($product->description ?? $item['name'] ?? 'Producto', 250),
-                    'quantity' => (int) ($item['quantity'] ?? 0), // Asegurar que sea int
-                    'unit_price' => (float) $priceGross, // Lo pasamos como float al final, asegurando el formato
+            if (Auth::check()) {
+                $user = Auth::user();
+                $cart = $user->cart()->with('cartItems.product')->first();
+                if (!$cart) {
+                    return back()->with('error', 'Tu carrito no existe o está vacío.');
+                }
+
+                // Construir los ítems para Mercado Pago (con precios brutos)
+                $mpItems = ($cart->cartItems ?? collect())->filter(fn($item) => $item->product)->map(function($item) {
+                    $productPriceNet = (float) $item->product->price; // Precio NETO de la DB
+                    $productPriceGross = round($productPriceNet * (1 + $this->ivaRate), 2);
+
+                    if ($productPriceGross <= 0 || $item->quantity <= 0) {
+                        \Log::error('Producto con precio o cantidad inválida detectado en el carrito de usuario.', [
+                            'product_id' => $item->product_id,
+                            'product_name' => $item->product->name,
+                            'unit_price_gross' => $productPriceGross,
+                            'quantity' => $item->quantity
+                        ]);
+                        return null; // Retorna null para que sea filtrado
+                    }
+
+                    return [
+                        'id' => (string) $item->product_id,
+                        'title' => $item->product->name,
+                        'description' => Str::limit($item->product->description ?? $item->product->name, 250),
+                        'quantity' => (int) $item->quantity,
+                        'unit_price' => (float) $productPriceGross,
+                        'currency_id' => "COP",
+                        'picture_url' => $item->product->image_url ?? asset('images/default_product.png'),
+                    ];
+                })->filter()->values();
+            } else {
+                $sessionCart = Session::get('cart', []);
+                $mpItems = collect($sessionCart)->map(function($item) {
+                    $product = Product::find($item['id']);
+                    $priceNet = $product ? (float) $product->price : (float) ($item['price'] ?? 0);
+                    $priceGross = round($priceNet * (1 + $this->ivaRate), 2);
+
+                    $itemQuantity = (int) ($item['quantity'] ?? 0);
+                    if ($priceGross <= 0 || $itemQuantity <= 0) {
+                        \Log::error('Producto con precio o cantidad inválida detectado en el carrito de sesión.', [
+                            'product_id' => $item['id'],
+                            'product_name' => $item['name'] ?? 'Desconocido',
+                            'unit_price_gross' => $priceGross,
+                            'quantity' => $itemQuantity
+                        ]);
+                        return null;
+                    }
+
+                    return [
+                        'id' => (string) ($item['id'] ?? uniqid()),
+                        'title' => $item['name'] ?? 'Producto Desconocido',
+                        'description' => Str::limit($product->description ?? $item['name'] ?? 'Producto', 250),
+                        'quantity' => $itemQuantity,
+                        'unit_price' => (float) $priceGross,
+                        'currency_id' => "COP",
+                        'picture_url' => $item['image'] ?? asset('images/default_product.png'),
+                    ];
+                })->filter()->values();
+            }
+
+            // Añadir la comisión de MP si no estamos en modo debug (el modo debug tiene un producto simple)
+            if ($mpItems->isEmpty()) {
+                \Log::error('El carrito está vacío después de filtrar productos inválidos. No se puede proceder con el pago.');
+                return back()->with('error', 'Tu carrito está vacío o contiene productos no válidos. No se puede proceder con el pago.');
+            }
+
+            // Obtener los ítems formateados del CartController para un cálculo de totales consistente.
+            // Esto es importante para el log, incluso si no se usa para el payload final de MP.
+            $actualCartItemsForTotals = $this->cartController->getFormattedCartItems();
+            $totals = $this->cartController->calculateCartTotals($actualCartItemsForTotals);
+
+            if ($totals['mp_fee_amount'] > 0) {
+                $mpItems->push([
+                    'id' => 'MP_FEE',
+                    'title' => 'Comisión de Mercado Pago',
+                    'description' => 'Costo por servicio de procesamiento de pago',
+                    'quantity' => 1,
+                    'unit_price' => (float) round($totals['mp_fee_amount'], 2),
                     'currency_id' => "COP",
-                    'picture_url' => $item['image'] ?? asset('images/default_product.png'),
-                ];
-            });
-        }
+                ]);
+            }
+        } // Fin del else (modo normal)
 
-        if ($mpItems->isEmpty()) {
-            return back()->with('error', 'Tu carrito está vacío. No se puede proceder con el pago.');
-        }
-
-        // Obtener los ítems formateados del CartController para un cálculo de totales consistente.
-        $actualCartItemsForTotals = $this->cartController->getFormattedCartItems();
-        $totals = $this->cartController->calculateCartTotals($actualCartItemsForTotals);
-
-        // AÑADIR LA COMISIÓN DE MP COMO UN ITEM ADICIONAL
-        if ($totals['mp_fee_amount'] > 0) {
-            $mpItems->push([
-                'id' => 'MP_FEE',
-                'title' => 'Comisión de Mercado Pago',
-                'description' => 'Costo por servicio de procesamiento de pago',
-                'quantity' => 1,
-                // Usamos round directamente para la comisión
-                'unit_price' => (float) round($totals['mp_fee_amount'], 2),
-                'currency_id' => "COP",
-            ]);
+        // Asegurarse de que el monto total de ítems sea positivo
+        $calculatedTotalFromItems = $mpItems->sum(function($item){ return $item['unit_price'] * $item['quantity']; });
+        if ($calculatedTotalFromItems <= 0) {
+            \Log::error('Intento de crear preferencia con la suma total de ítems <= 0: ' . $calculatedTotalFromItems);
+            return back()->with('error', 'El monto total a pagar de los productos debe ser positivo.');
         }
 
         // ===================================================================
-        // LOGS IMPORTANTES (mantener para monitoreo)
+        // LOGS IMPORTANTES ANTES DE ENVIAR A MERCADO PAGO
         // ===================================================================
-        \Log::info('Detalles de totales antes de enviar a Mercado Pago (FINAL):', [
-            'subtotal_net_productos' => $totals['subtotal_net_products'],
-            'iva_productos_calculado' => $totals['iva_products_amount'],
-            'subtotal_gross_productos' => $totals['subtotal_gross_products'],
-            'comision_mp_total' => $totals['mp_fee_amount'],
-            'total_final_a_pagar_cartcontroller' => $totals['final_total'],
+        \Log::info('Mercado Pago Preference Payload (Final):', [
             'items_enviados_a_mp' => $mpItems->toArray(),
-            'total_sum_of_mp_items' => $mpItems->sum(function($item){ return $item['unit_price'] * $item['quantity']; }),
+            'total_sum_of_mp_items' => $calculatedTotalFromItems,
+            'payer_email' => $payerEmail,
+            'debug_mode_activo' => $debugMode, // Para saber si estamos en modo debug
         ]);
         // ===================================================================
-
-        // Asegurarse de que el monto sea válido (aunque ya no se envía transaction_amount, la suma de ítems debe ser > 0)
-        if ($mpItems->sum(function($item){ return $item['unit_price'] * $item['quantity']; }) <= 0) {
-            \Log::error('Intento de crear preferencia con monto total de ítems <= 0.');
-            return back()->with('error', 'El monto total a pagar debe ser positivo.');
-        }
 
         $preferenceClient = new PreferenceClient();
         try {
@@ -145,16 +189,9 @@ class MercadoPagoController extends Controller
                 "external_reference" => 'ORDER-' . uniqid(),
                 "statement_descriptor" => "TIENDAJD",
                 "payer" => [
-                    "email" => Auth::check() ? Auth::user()->email : 'invitado@ejemplo.com',
+                    "email" => $payerEmail, // Usa el email ya determinado (normal o debug)
                 ],
-                // ===============================================================================
-                // CAMBIO CLAVE: Se ha eliminado 'transaction_amount'.
-                // Mercado Pago calculará el total basándose en la suma de los 'items'.
-                // Esto ayuda a evitar inconsistencias por redondeo.
-                // ===============================================================================
             ];
-
-            \Log::info('Mercado Pago Preference Payload (Final):', $preferenceData);
 
             $response = $preferenceClient->create($preferenceData);
 
@@ -169,8 +206,12 @@ class MercadoPagoController extends Controller
                 $errorMessage = $apiResponse->error->message ?? $errorMessage;
                 $errorDetails = $apiResponse->error->cause ?? [];
             }
-
-            \Log::error('Error de API de Mercado Pago al crear preferencia: ' . $errorMessage, ['details' => $errorDetails, 'exception_code' => $e->getCode(), 'api_response_raw' => json_encode($apiResponse)]);
+            $rawApiResponseString = json_encode($apiResponse);
+            \Log::error('Error de API de Mercado Pago al crear preferencia: ' . $errorMessage, [
+                'details' => $errorDetails,
+                'exception_code' => $e->getCode(),
+                'api_response_raw' => $rawApiResponseString
+            ]);
 
             $userMessage = 'Error al crear la preferencia de pago. Por favor, revisa los datos ingresados.';
             if (!empty($errorDetails) && is_array($errorDetails)) {

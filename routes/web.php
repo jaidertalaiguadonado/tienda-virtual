@@ -3,14 +3,14 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
-use App\Http\Controllers\CartController; // Asegúrate de que esta línea esté presente
+use App\Http\Controllers\CartController;
 use Illuminate\Support\Facades\Route;
-use App\Models\Product; // Asegúrate de que esta línea esté presente
-use App\Http\Controllers\MercadoPagoController; // Asegúrate de que esta línea esté presente
-use App\Http\Controllers\HomeController; // Asegúrate de que esta línea esté presente
+use App\Models\Product;
+use App\Http\Controllers\MercadoPagoController;
+use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\UserController; // Asegúrate de que esta línea esté presente
-use App\Http\Controllers\Admin\OrderController; // Asegúrate de que esta línea esté presente
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\Admin\OrderController;
 
 
 /*
@@ -18,13 +18,6 @@ use App\Http\Controllers\Admin\OrderController; // Asegúrate de que esta línea
 | Web Routes
 |--------------------------------------------------------------------------
 */
-
-// =====================================================================
-// RUTA DE DEPURACIÓN DE CARRITO (TEMPORALMENTE PÚBLICA PARA DEBUG)
-// Una vez que funcione, puedes moverla de vuelta al grupo 'auth'.
-// =====================================================================
-Route::get('/test-cart-populate', [CartController::class, 'testCartPopulateAndCalculate'])->name('test.cart.populate');
-
 
 // Ruta de bienvenida - Accesible para todos
 Route::get('/', function () {
@@ -41,10 +34,8 @@ Route::post('/mercadopago/webhook', [MercadoPagoController::class, 'handleWebhoo
 // =========================================================================
 Route::get('/cart', [CartController::class, 'show'])->name('cart.show');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
-// Usando POST para update y remove como en tu código existente para evitar romper el frontend
 Route::post('/cart/update', [CartController::class, 'update'])->name('cart.update');
 Route::post('/cart/remove', [CartController::class, 'remove'])->name('cart.remove');
-// Ruta para obtener el conteo de ítems del carrito (API)
 Route::get('/api/cart-count', [CartController::class, 'getCartItemCount'])->name('api.cart.count');
 
 
@@ -71,9 +62,14 @@ Route::middleware('auth')->group(function () {
 
     // Dashboard de usuario (si aplica, diferente al de admin)
     Route::get('/user-dashboard', function () {
-        return view('dashboard'); // Podrías crear una vista específica para user-dashboard
+        return view('dashboard');
     })->name('user.dashboard');
 
+    // =====================================================================
+    // NUEVA RUTA DE DEPURACIÓN PARA MERCADO PAGO
+    // Accede a esta ruta para probar la creación de preferencia con un producto fijo.
+    // =====================================================================
+    Route::get('/debug-mercadopago-preference', [MercadoPagoController::class, 'createPaymentPreference'])->name('mercadopago.debug')->defaults('debugMode', true);
 });
 
 
@@ -84,7 +80,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     // Dashboard de administrador
     Route::get('/dashboard', function () {
-        return view('dashboard'); // Podrías crear una vista específica para admin-dashboard
+        return view('dashboard');
     })->name('dashboard');
 
     // Prefijo y nombre para las rutas de administración
