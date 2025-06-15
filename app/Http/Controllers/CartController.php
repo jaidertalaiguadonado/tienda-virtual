@@ -21,7 +21,7 @@ class CartController extends Controller
      * Constructor para inicializar el SDK de Mercado Pago.
      * Inyecta el CartController.
      */
-    public function __construct() // Eliminamos la inyección del CartController si no es necesaria, o la dejamos si hay una dependencia circular real.
+    public function __construct()
     {
         // El constructor no necesita inyectar CartController si solo se usa $this para los métodos.
         // Si este constructor necesita CartController, habría un problema de recursividad.
@@ -97,9 +97,12 @@ class CartController extends Controller
     {
         $cartItems = $this->getFormattedCartItems();
         $totals = $this->calculateCartTotals($cartItems);
+        
+        // ¡NUEVO! Calculamos cartCount aquí
+        $cartCount = $cartItems->sum('quantity');
 
-        // Pasamos los totales directamente a la vista
-        return view('cart.show', array_merge(compact('cartItems'), $totals));
+        // Pasamos cartCount a la vista
+        return view('cart.show', array_merge(compact('cartItems', 'cartCount'), $totals));
     }
 
     /**
@@ -258,9 +261,9 @@ class CartController extends Controller
 
         // Formatear ítems para la vista y cálculos, incluyendo el precio bruto
         $formattedItems = $rawCartItems->map(function($item) {
-            // dd($item->product); // <--- AGREGAR TEMPORALMENTE ESTE DD() AQUÍ
-                                 // Para ver la estructura del objeto $item->product
-                                 // y verificar si tiene 'image_url'
+            // dd($item->product); // <--- DEJAMOS ESTE DD() AQUÍ PARA LA PRÓXIMA DEPURACIÓN
+                                 // Necesitamos ver la estructura del objeto Product
+                                 // para saber por qué no tiene 'image_url'
 
             $productPriceNet = $item->product->price;
             $productPriceGross = $productPriceNet * (1 + self::IVA_RATE); // Usamos self::IVA_RATE
