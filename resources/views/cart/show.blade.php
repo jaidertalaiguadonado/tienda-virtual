@@ -713,6 +713,7 @@ a {
             @endauth
         </div>
 
+        {{-- Menú móvil --}}
         <div class="navbar-links-mobile">
             <a href="{{ route('cart.show') }}" class="navbar-link">
                 Carrito (<span id="cart-item-count-mobile">0</span>)
@@ -768,7 +769,8 @@ a {
                         </td>
                         <td class="item-subtotal-gross" data-id="{{ $item['id'] }}" data-label="Subtotal:">${{ number_format($item['subtotal_item_gross'], 2, ',', '.') }}</td>
                         <td data-label="Acción:">
-                            <button type="button" class="remove-button" data-id="{{ $item['id'] }}">Eliminar</button>
+                            {{-- ¡Clase corregida aquí! Ahora es 'remove-item' --}}
+                            <button type="button" class="remove-item" data-id="{{ $item['id'] }}">Eliminar</button>
                         </td>
                     </tr>
                 @endforeach
@@ -809,7 +811,7 @@ a {
         <p>&copy; {{ date('Y') }} {{ config('app.name', 'Mi Tienda') }}. Todos los derechos reservados.</p>
     </footer>
 
-  <script>
+    <script>
         document.addEventListener('DOMContentLoaded', function() {
             const menuToggle = document.querySelector('.menu-toggle');
             const mobileMenu = document.querySelector('.navbar-links-mobile');
@@ -844,6 +846,7 @@ a {
             
             // Función para formatear números para la interfaz de usuario
             function formatNumberForUI(number) {
+                // Asegúrate de que el número sea un float antes de formatear
                 return parseFloat(number).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             }
 
@@ -917,7 +920,7 @@ a {
 
                 // Si hay un ítem específico actualizado en la respuesta (desde update)
                 // Esto se usa cuando se actualiza solo un ítem y se devuelven sus detalles.
-                if (data.item && data.item.id) {
+                if (data.item && typeof data.item.id !== 'undefined') { // Verificar que item.id existe
                     const itemSubtotalGrossElement = document.querySelector(`.item-subtotal-gross[data-id="${data.item.id}"]`);
                     if (itemSubtotalGrossElement) {
                         itemSubtotalGrossElement.textContent = formatNumberForUI(data.item.subtotal_item_gross);
@@ -962,8 +965,6 @@ a {
                     // Lógica para eliminar la fila si la cantidad es 0 o se eliminó
                     // Ahora se basa en el 'cartCount' en la respuesta, y si el item específico fue eliminado.
                     if (responseData.cartCount === 0 || (responseData.item && responseData.item.quantity === 0)) {
-                        // Si el carrito está vacío, updateCartUI ya lo maneja.
-                        // Si un item específico fue eliminado (cantidad 0), remover su fila.
                         const rowToRemove = document.querySelector(`tr[data-id="${payloadData.id}"]`);
                         if (rowToRemove) {
                             rowToRemove.remove();
@@ -1003,9 +1004,9 @@ a {
                         sendCartRequest('{{ route('cart.update') }}', 'POST', { id: itemId, quantity: newQuantity });
                     }
                     
-                    if (target.classList.contains('remove-item')) {
+                    // ¡Clase corregida para el botón de eliminar!
+                    if (target.classList.contains('remove-item')) { 
                         // No usar confirm() directamente. Si necesitas confirmación, usa un modal.
-                        // Por ahora, solo envía la petición. El backend maneja el resultado.
                         sendCartRequest('{{ route('cart.remove') }}', 'POST', { id: itemId });
                     }
                 });
@@ -1021,11 +1022,6 @@ a {
                             target.value = 1; // Revertir el valor en el input
                         }
 
-                        // Si la cantidad cambia a 0, se procesa como eliminación
-                        if (newQuantity === 0) {
-                            // No usar confirm() directamente. Si necesitas confirmación, usa un modal.
-                            // Por ahora, solo envía la petición. El backend maneja el resultado.
-                        }
                         sendCartRequest('{{ route('cart.update') }}', 'POST', { id: itemId, quantity: newQuantity });
                     }
                 });
@@ -1044,6 +1040,5 @@ a {
             });
         });
     </script>
-
 </body>
 </html>
