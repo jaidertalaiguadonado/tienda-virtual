@@ -12,9 +12,21 @@ use Illuminate\Support\Facades\Log;
 
 class CartController extends Controller
 {
-    private $ivaRate = 0.19; // 19% de IVA para Colombia
+    // Cambiamos a constante pública para poder accederla desde la vista
+    public const IVA_RATE = 0.19; // 19% de IVA para Colombia
     private $mpFeeRate = 0.0349; // 3.49% de comisión de Mercado Pago
     private $mpFixedFee = 900; // 900 COP de costo fijo por transacción de Mercado Pago
+
+    /**
+     * Constructor para inicializar el SDK de Mercado Pago.
+     * Inyecta el CartController.
+     */
+    public function __construct() // Eliminamos la inyección del CartController si no es necesaria, o la dejamos si hay una dependencia circular real.
+    {
+        // El constructor no necesita inyectar CartController si solo se usa $this para los métodos.
+        // Si este constructor necesita CartController, habría un problema de recursividad.
+        // Asegúrate de que el constructor de MercadoPagoController si inyecta CartController lo haga correctamente.
+    }
 
     /**
      * Añade un producto al carrito.
@@ -66,7 +78,7 @@ class CartController extends Controller
                     'id' => $productId,
                     'name' => $product->name,
                     'price' => $product->price, // Almacenar precio neto del producto
-                    'image' => $product->image_url,
+                    'image_url' => $product->image_url, // Asegúrate de guardar la image_url aquí también
                     'quantity' => $quantity,
                 ];
             }
@@ -86,22 +98,23 @@ class CartController extends Controller
         $cartItems = $this->getFormattedCartItems();
         $totals = $this->calculateCartTotals($cartItems);
 
-        return view('cart.show', compact('cartItems', 'totals'));
+        // Pasamos los totales directamente a la vista
+        return view('cart.show', array_merge(compact('cartItems'), $totals));
     }
 
     /**
      * Actualiza la cantidad de un producto en el carrito.
      *
      * @param Request $request
-     * @return \Illuminate\Http\RedirectResponse
+     * @return \Illuminate\Http\JsonResponse
      */
     public function updateCart(Request $request)
     {
-        $productId = $request->input('product_id');
+        $productId = $request->input('product_id'); // Usamos product_id como en el JS
         $quantity = $request->input('quantity');
 
-        if ($quantity <= 0) {
-            return $this->removeFromCart($request); // Si la cantidad es 0 o menos, eliminarlo
+        if (!is_numeric($quantity) || $quantity < 0) {
+            return response()->json(['message' => 'Cantidad inválida.'], 400);
         }
 
         if (Auth::check()) {
@@ -110,31 +123,53 @@ class CartController extends Controller
             if ($cart) {
                 $cartItem = $cart->cartItems()->where('product_id', $productId)->first();
                 if ($cartItem) {
-                    $cartItem->quantity = $quantity;
-                    $cartItem->save();
-                    return back()->with('success', 'Cantidad del producto actualizada.');
+                    if ($quantity == 0) {
+                        $cartItem->delete();
+                        $itemRemoved = true;
+                    } else {
+                        $cartItem->quantity = $quantity;
+                        $cartItem->save();
+                        $itemRemoved = false;
+                    }
+                } else {
+                    return response()->json(['message' => 'Producto no encontrado en el carrito.'], 404);
                 }
+            } else {
+                return response()->json(['message' => 'Carrito no encontrado para el usuario.'], 404);
             }
         } else {
-            $cart = Session::get('cart', []);
-            if (isset($cart[$productId])) {
-                $cart[$productId]['quantity'] = $quantity;
-                Session::put('cart', $cart);
-                return back()->with('success', 'Cantidad del producto actualizada.');
+            $sessionCart = Session::get('cart', []);
+            if (isset($sessionCart[$productId])) {
+                if ($quantity == 0) {
+                    unset($sessionCart[$productId]);
+                    $itemRemoved = true;
+                } else {
+                    $sessionCart[$productId]['quantity'] = $quantity;
+                    $itemRemoved = false;
+                }
+                Session::put('cart', $sessionCart);
+            } else {
+                return response()->json(['message' => 'Producto no encontrado en el carrito de sesión.'], 404);
             }
         }
-        return back()->with('error', 'Producto no encontrado en el carrito.');
+
+        // Después de la actualización/eliminación, recalculamos y devolvemos los nuevos totales
+        $cartItems = $this->getFormattedCartItems();
+        $totals = $this->calculateCartTotals($cartItems);
+        $cartCount = $cartItems->sum('quantity'); // Obtener la cuenta total de items
+
+        return response()->json(array_merge($totals, ['cartCount' => $cartCount, 'item_removed' => $itemRemoved]));
     }
 
     /**
      * Elimina un producto del carrito.
      *
      * @param Request $request
-     * @return \Illuminate\Http\RedirectResponse
+     * @return \Illuminate\Http\JsonResponse
      */
     public function removeFromCart(Request $request)
     {
-        $productId = $request->input('product_id');
+        $productId = $request->input('product_id'); // Usamos product_id como en el JS
 
         if (Auth::check()) {
             $user = Auth::user();
@@ -149,7 +184,13 @@ class CartController extends Controller
                 Session::put('cart', $cart);
             }
         }
-        return back()->with('success', 'Producto eliminado del carrito.');
+        
+        // Recalculamos y devolvemos los nuevos totales
+        $cartItems = $this->getFormattedCartItems();
+        $totals = $this->calculateCartTotals($cartItems);
+        $cartCount = $cartItems->sum('quantity'); // Obtener la cuenta total de items
+
+        return response()->json(array_merge($totals, ['cartCount' => $cartCount, 'item_removed' => true]));
     }
 
     /**
@@ -172,6 +213,19 @@ class CartController extends Controller
     }
 
     /**
+     * Obtiene el conteo total de ítems en el carrito.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getCartItemCount()
+    {
+        $cartItems = $this->getFormattedCartItems();
+        $cartCount = $cartItems->sum('quantity');
+        return response()->json(['cartCount' => $cartCount]);
+    }
+
+
+    /**
      * Obtiene los ítems del carrito formateados con precios brutos.
      * Utilizado tanto para mostrar el carrito como para calcular los totales.
      *
@@ -183,6 +237,7 @@ class CartController extends Controller
 
         if (Auth::check()) {
             $user = Auth::user();
+            // Aseguramos que 'product' se cargue para acceder a sus propiedades
             $cart = $user->cart()->with('cartItems.product')->first();
             if ($cart) {
                 $rawCartItems = $cart->cartItems->filter(fn($item) => $item->product);
@@ -194,7 +249,7 @@ class CartController extends Controller
                 if ($product) {
                     $rawCartItems->push((object)[ // Convertir a objeto para consistencia
                         'product_id' => $product->id,
-                        'product' => $product,
+                        'product' => $product, // Este es el modelo Product Eloquent
                         'quantity' => $itemData['quantity'],
                     ]);
                 }
@@ -203,21 +258,26 @@ class CartController extends Controller
 
         // Formatear ítems para la vista y cálculos, incluyendo el precio bruto
         $formattedItems = $rawCartItems->map(function($item) {
+            // dd($item->product); // <--- AGREGAR TEMPORALMENTE ESTE DD() AQUÍ
+                                 // Para ver la estructura del objeto $item->product
+                                 // y verificar si tiene 'image_url'
+
             $productPriceNet = $item->product->price;
-            $productPriceGross = $productPriceNet * (1 + $this->ivaRate);
+            $productPriceGross = $productPriceNet * (1 + self::IVA_RATE); // Usamos self::IVA_RATE
 
             // Usar sprintf para asegurar 2 decimales y luego castear a float
             $unitPriceDisplay = (float) sprintf("%.2f", $productPriceGross);
             $subtotalDisplay = (float) sprintf("%.2f", $productPriceGross * $item->quantity);
 
             return (object)[
-                'id'         => $item->product_id,
-                'name'       => $item->product->name,
-                'price_net'  => (float) sprintf("%.2f", $productPriceNet),
-                'price_gross'=> $unitPriceDisplay, // Precio unitario con IVA para mostrar
-                'image'      => $item->product->image_url ?? asset('images/default_product.png'),
-                'quantity'   => $item->quantity,
-                'subtotal'   => $subtotalDisplay, // Subtotal de este ítem (cantidad * precio bruto)
+                'id'          => $item->product_id, // ID del producto
+                'name'        => $item->product->name,
+                'price_net'   => (float) sprintf("%.2f", $productPriceNet),
+                'price_gross' => $unitPriceDisplay, // Precio unitario con IVA para mostrar
+                // ACCESO CLAVE: ASUMIMOS que $item->product es un modelo Product con una columna 'image_url'
+                'image_url'   => $item->product->image_url ?? asset('images/default_product.png'),
+                'quantity'    => $item->quantity,
+                'subtotal_item_gross' => $subtotalDisplay, // Nombre ajustado para coincidir con la vista
             ];
         });
 
@@ -254,14 +314,14 @@ class CartController extends Controller
 
         // --- Logging para depuración en el CartController ---
         \Log::info('Calculando totales en CartController:', [
-            'subtotal_net_productos'  => $subtotalNetProducts,
-            'iva_productos_calculado' => $ivaProductsAmount,
-            'subtotal_gross_productos'=> $subtotalGrossProducts,
+            'subtotal_net_products'       => $subtotalNetProducts,
+            'iva_products_amount'         => $ivaProductsAmount,
+            'subtotal_gross_products'     => $subtotalGrossProducts,
             'comision_mp_bruta_calculada' => $mpFeeAmountRaw, // Valor antes de formatear
-            'comision_mp_final'       => $mpFeeAmount, // Valor formateado a 2 decimales
-            'total_final_calculado'   => $finalTotal,
-            'mp_fee_rate'             => $this->mpFeeRate,
-            'mp_fixed_fee'            => $this->mpFixedFee,
+            'comision_mp_final'           => $mpFeeAmount, // Valor formateado a 2 decimales
+            'total_final_calculado'       => $finalTotal,
+            'mp_fee_rate'                 => $this->mpFeeRate,
+            'mp_fixed_fee'                => $this->mpFixedFee,
         ]);
         // --- Fin de Logging ---
 
