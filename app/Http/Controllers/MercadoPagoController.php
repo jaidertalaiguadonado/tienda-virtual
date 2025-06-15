@@ -54,19 +54,16 @@ class MercadoPagoController extends Controller
 
             // Construir los ítems para Mercado Pago (con precios brutos)
             $mpItems = ($cart->cartItems ?? collect())->filter(fn($item) => $item->product)->map(function($item) {
-                $productPriceNet = $item->product->price; // Precio NETO de la DB
-
-                // =================================================================================
-                // CAMBIO CRÍTICO: Forzar unit_price a string con 2 decimales usando sprintf
-                // =================================================================================
-                $productPriceGross = sprintf("%.2f", $productPriceNet * (1 + $this->ivaRate));
+                $productPriceNet = (float) $item->product->price; // Precio NETO de la DB
+                // Calcular el precio bruto y redondearlo para asegurar 2 decimales
+                $productPriceGross = round($productPriceNet * (1 + $this->ivaRate), 2);
 
                 return [
-                    'id' => $item->product_id,
+                    'id' => (string) $item->product_id, // Asegurar que sea string
                     'title' => $item->product->name,
                     'description' => Str::limit($item->product->description ?? $item->product->name, 250),
-                    'quantity' => $item->quantity,
-                    'unit_price' => (float) $productPriceGross, // Lo pasamos como float al final, pero asegurando el formato
+                    'quantity' => (int) $item->quantity, // Asegurar que sea int
+                    'unit_price' => (float) $productPriceGross, // Lo pasamos como float al final, asegurando el formato
                     'currency_id' => "COP",
                     'picture_url' => $item->product->image_url ?? asset('images/default_product.png'),
                 ];
@@ -77,19 +74,16 @@ class MercadoPagoController extends Controller
             $sessionCart = Session::get('cart', []);
             $mpItems = collect($sessionCart)->map(function($item) {
                 $product = Product::find($item['id']);
-                $priceNet = $product ? $product->price : ($item['price'] ?? 0); // Asumiendo que el precio del producto es NETO
-
-                // =================================================================================
-                // CAMBIO CRÍTICO: Forzar unit_price a string con 2 decimales usando sprintf (sesión)
-                // =================================================================================
-                $priceGross = sprintf("%.2f", $priceNet * (1 + $this->ivaRate));
+                $priceNet = $product ? (float) $product->price : (float) ($item['price'] ?? 0); // Asumiendo que el precio del producto es NETO
+                // Calcular el precio bruto y redondearlo para asegurar 2 decimales
+                $priceGross = round($priceNet * (1 + $this->ivaRate), 2);
 
                 return [
-                    'id' => $item['id'],
+                    'id' => (string) ($item['id'] ?? uniqid()), // Asegurar que sea string y un fallback
                     'title' => $item['name'] ?? 'Producto Desconocido',
                     'description' => Str::limit($product->description ?? $item['name'] ?? 'Producto', 250),
-                    'quantity' => $item['quantity'],
-                    'unit_price' => (float) $priceGross, // Lo pasamos como float al final, pero asegurando el formato
+                    'quantity' => (int) ($item['quantity'] ?? 0), // Asegurar que sea int
+                    'unit_price' => (float) $priceGross, // Lo pasamos como float al final, asegurando el formato
                     'currency_id' => "COP",
                     'picture_url' => $item['image'] ?? asset('images/default_product.png'),
                 ];
@@ -111,19 +105,11 @@ class MercadoPagoController extends Controller
                 'title' => 'Comisión de Mercado Pago',
                 'description' => 'Costo por servicio de procesamiento de pago',
                 'quantity' => 1,
-                // =================================================================================
-                // CAMBIO CRÍTICO: Forzar unit_price de comisión a string con 2 decimales usando sprintf
-                // =================================================================================
-                'unit_price' => (float) sprintf("%.2f", $totals['mp_fee_amount']),
+                // Usamos round directamente para la comisión
+                'unit_price' => (float) round($totals['mp_fee_amount'], 2),
                 'currency_id' => "COP",
             ]);
         }
-
-        // =================================================================================
-        // CAMBIO CRÍTICO: Forzar total_final_to_pay a string con 2 decimales usando sprintf
-        // =================================================================================
-        $final_total_to_pay = (float) sprintf("%.2f", $totals['final_total']);
-
 
         // ===================================================================
         // LOGS IMPORTANTES (mantener para monitoreo)
@@ -134,15 +120,14 @@ class MercadoPagoController extends Controller
             'subtotal_gross_productos' => $totals['subtotal_gross_products'],
             'comision_mp_total' => $totals['mp_fee_amount'],
             'total_final_a_pagar_cartcontroller' => $totals['final_total'],
-            'total_final_a_pagar_formateado_enviado_a_mp' => $final_total_to_pay,
             'items_enviados_a_mp' => $mpItems->toArray(),
             'total_sum_of_mp_items' => $mpItems->sum(function($item){ return $item['unit_price'] * $item['quantity']; }),
         ]);
         // ===================================================================
 
-        // Asegurarse de que el monto sea válido
-        if ($final_total_to_pay <= 0) {
-            \Log::error('Intento de crear preferencia con monto total <= 0: ' . $final_total_to_pay);
+        // Asegurarse de que el monto sea válido (aunque ya no se envía transaction_amount, la suma de ítems debe ser > 0)
+        if ($mpItems->sum(function($item){ return $item['unit_price'] * $item['quantity']; }) <= 0) {
+            \Log::error('Intento de crear preferencia con monto total de ítems <= 0.');
             return back()->with('error', 'El monto total a pagar debe ser positivo.');
         }
 
@@ -162,7 +147,11 @@ class MercadoPagoController extends Controller
                 "payer" => [
                     "email" => Auth::check() ? Auth::user()->email : 'invitado@ejemplo.com',
                 ],
-                "transaction_amount" => $final_total_to_pay,
+                // ===============================================================================
+                // CAMBIO CLAVE: Se ha eliminado 'transaction_amount'.
+                // Mercado Pago calculará el total basándose en la suma de los 'items'.
+                // Esto ayuda a evitar inconsistencias por redondeo.
+                // ===============================================================================
             ];
 
             \Log::info('Mercado Pago Preference Payload (Final):', $preferenceData);
