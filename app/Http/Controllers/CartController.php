@@ -261,7 +261,7 @@ class CartController extends Controller
 
         // Formatear ítems para la vista y cálculos, incluyendo el precio bruto
         $formattedItems = $rawCartItems->map(function($item) {
-            // dd($item->product); // <--- DEJAMOS ESTE DD() AQUÍ PARA LA PRÓXIMA DEPURACIÓN
+            dd($item->product); // <--- DEJAMOS ESTE DD() AQUÍ PARA LA PRÓXIMA DEPURACIÓN
                                  // Necesitamos ver la estructura del objeto Product
                                  // para saber por qué no tiene 'image_url'
 
