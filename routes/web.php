@@ -53,6 +53,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/payment/success', [MercadoPagoController::class, 'paymentSuccess'])->name('mercadopago.success');
     Route::get('/payment/failure', [MercadoPagoController::class, 'paymentFailure'])->name('mercadopago.failure');
     Route::get('/payment/pending', [MercadoPagoController::class, 'paymentPending'])->name('mercadopago.pending');
+    Route::get('/test-cart-populate', [CartController::class, 'testCartPopulateAndCalculate'])->name('test.cart.populate');
 
     // Rutas de perfil de usuario
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -85,7 +86,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
         Route::resource('categories', CategoryController::class);
         Route::resource('products', ProductController::class);
         Route::resource('orders', OrderController::class)->only(['index', 'show', 'update', 'destroy']);
-        Route::get('/test-cart-populate', [CartController::class, 'testCartPopulateAndCalculate'])->name('test.cart.populate');
+        
     });
 });
 
