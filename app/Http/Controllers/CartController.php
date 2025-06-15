@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Product;
 use App\Models\Cart;
 use App\Models\CartItem;
@@ -12,472 +12,265 @@ use Illuminate\Support\Facades\Log;
 
 class CartController extends Controller
 {
-    const IVA_RATE = 0.19; // Tasa de IVA (19%)
-    const MP_COMMISSION_PERCENTAGE = 0.0329; // Comisión de Mercado Pago (3.29%)
-    const MP_FIXED_FEE = 900; // Cuota fija de Mercado Pago (por ejemplo, 900 COP)
+    private $ivaRate = 0.19; // 19% de IVA para Colombia
+    private $mpFeeRate = 0.0349; // 3.49% de comisión de Mercado Pago
+    private $mpFixedFee = 900; // 900 COP de costo fijo por transacción de Mercado Pago
+
+    /**
+     * Añade un producto al carrito.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function addToCart(Request $request)
+    {
+        $productId = $request->input('product_id');
+        $quantity = $request->input('quantity', 1);
+
+        if ($quantity <= 0) {
+            return back()->with('error', 'La cantidad debe ser al menos 1.');
+        }
+
+        $product = Product::find($productId);
+
+        if (!$product) {
+            return back()->with('error', 'Producto no encontrado.');
+        }
+
+        if (Auth::check()) {
+            // Usuario autenticado: guardar en la base de datos
+            $user = Auth::user();
+            $cart = $user->cart()->firstOrCreate([]); // Obtener o crear carrito del usuario
+
+            $cartItem = $cart->cartItems()->where('product_id', $productId)->first();
+
+            if ($cartItem) {
+                // Si el producto ya está en el carrito, actualizar la cantidad
+                $cartItem->quantity += $quantity;
+                $cartItem->save();
+            } else {
+                // Si es un nuevo producto, crearlo
+                $cart->cartItems()->create([
+                    'product_id' => $productId,
+                    'quantity' => $quantity,
+                ]);
+            }
+        } else {
+            // Usuario no autenticado (invitado): guardar en la sesión
+            $cart = Session::get('cart', []);
+
+            if (isset($cart[$productId])) {
+                $cart[$productId]['quantity'] += $quantity;
+            } else {
+                $cart[$productId] = [
+                    'id' => $productId,
+                    'name' => $product->name,
+                    'price' => $product->price, // Almacenar precio neto del producto
+                    'image' => $product->image_url,
+                    'quantity' => $quantity,
+                ];
+            }
+            Session::put('cart', $cart);
+        }
+
+        return back()->with('success', 'Producto añadido al carrito.');
+    }
 
     /**
      * Muestra el contenido del carrito.
      *
      * @return \Illuminate\View\View
      */
-    public function show()
+    public function showCart()
     {
         $cartItems = $this->getFormattedCartItems();
         $totals = $this->calculateCartTotals($cartItems);
 
-        return view('cart.show', $totals);
-    }
-
-    /**
-     * Añade un producto al carrito.
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\RedirectResponse | \Illuminate\Http\JsonResponse
-     */
-    public function add(Request $request)
-    {
-        $productId = $request->input('product_id');
-        $quantity = $request->input('quantity', 1);
-
-        $product = Product::findOrFail($productId); // Fallará si el producto no existe
-
-        if (Auth::check()) {
-            $user = Auth::user();
-            // Busca o crea el carrito para el usuario
-            $cart = Cart::firstOrCreate(['user_id' => $user->id]);
-
-            // Busca si el producto ya existe en el carrito del usuario
-            $cartItem = $cart->cartItems()->where('product_id', $productId)->first();
-
-            if ($cartItem) {
-                // Si existe, actualiza la cantidad
-                $cartItem->quantity += $quantity;
-                $cartItem->save();
-            } else {
-                // Si no existe, crea un nuevo CartItem
-                $cart->cartItems()->create([
-                    'product_id' => $productId,
-                    'quantity' => $quantity,
-                    'price_at_addition' => $product->price, // Guarda el precio del producto al momento de añadir
-                ]);
-            }
-
-            // Para peticiones AJAX, devolver JSON
-            if ($request->expectsJson() || $request->ajax()) {
-                $cartCount = $this->getCartItemCount()->original['cartCount'];
-                return response()->json([
-                    'message' => 'Producto añadido al carrito.',
-                    'status' => 'success',
-                    'cartCount' => $cartCount
-                ]);
-            }
-        } else {
-            // Manejo del carrito para usuarios invitados (sesión)
-            $sessionCart = Session::get('cart', []);
-            $found = false;
-            foreach ($sessionCart as $key => &$item) { // Usar & para modificar el array directamente
-                if (($item['id'] ?? null) == $productId) { // Usa null coalescing para seguridad
-                    $sessionCart[$key]['quantity'] += $quantity;
-                    $found = true;
-                    break;
-                }
-            }
-            if (!$found) {
-                // Si el producto no está en la sesión, añádelo
-                $sessionCart[] = [
-                    'id' => $productId, // ID del producto para sesión
-                    'name' => $product->name,
-                    'price' => $product->price,
-                    'image_url' => $product->image_url,
-                    'quantity' => $quantity
-                ];
-            }
-            Session::put('cart', $sessionCart); // Guarda el carrito actualizado en la sesión
-
-            // Para peticiones AJAX, devolver JSON
-            if ($request->expectsJson() || $request->ajax()) {
-                $cartCount = $this->getCartItemCount()->original['cartCount'];
-                return response()->json([
-                    'message' => 'Producto añadido al carrito.',
-                    'status' => 'success',
-                    'cartCount' => $cartCount
-                ]);
-            }
-        }
-
-        // Si no es una petición AJAX, redirigir
-        return redirect()->back()->with('success', 'Producto añadido al carrito.');
+        return view('cart.show', compact('cartItems', 'totals'));
     }
 
     /**
      * Actualiza la cantidad de un producto en el carrito.
-     * El frontend debe enviar 'id' (que puede ser cart_item_id para DB o product_id para sesión).
      *
      * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\Http\RedirectResponse
      */
-    public function update(Request $request)
+    public function updateCart(Request $request)
     {
-        $identifier = $request->input('id'); // ID del CartItem (para logueado) o product_id (para invitado)
+        $productId = $request->input('product_id');
         $quantity = $request->input('quantity');
 
-        // Validar cantidad
-        if (!is_numeric($quantity) || $quantity < 0) {
-            return response()->json(['message' => 'Cantidad inválida.', 'status' => 'error'], 400);
+        if ($quantity <= 0) {
+            return $this->removeFromCart($request); // Si la cantidad es 0 o menos, eliminarlo
         }
-
-        // Si la cantidad es 0, procesar como eliminación
-        if ($quantity == 0) {
-            return $this->remove($request); // remove() ya devuelve JSON
-        }
-
-        $updatedSuccessfully = false;
-        $productIdForResponse = null; // Para devolver el item actualizado en la UI
 
         if (Auth::check()) {
             $user = Auth::user();
-            $cart = $user->cart;
+            $cart = $user->cart()->first();
             if ($cart) {
-                // Para usuarios logueados, $identifier es el ID del CartItem
-                $cartItem = $cart->cartItems()->where('id', $identifier)->first();
+                $cartItem = $cart->cartItems()->where('product_id', $productId)->first();
                 if ($cartItem) {
                     $cartItem->quantity = $quantity;
                     $cartItem->save();
-                    $updatedSuccessfully = true;
-                    $productIdForResponse = $cartItem->product_id; // Obtener product_id para la respuesta
-                } else {
-                    Log::warning("Intento de actualizar CartItem con ID {$identifier} para usuario {$user->id}, pero no encontrado.");
-                    return response()->json(['message' => 'Producto no encontrado en el carrito del usuario.', 'status' => 'error'], 404);
-                }
-            } else {
-                Log::warning("Usuario {$user->id} no tiene carrito asociado al intentar actualizar.");
-                return response()->json(['message' => 'Carrito no encontrado para el usuario.', 'status' => 'error'], 404);
-            }
-        } else { // Carrito de invitado (sesión)
-            $sessionCart = Session::get('cart', []);
-            $updated = false;
-            foreach ($sessionCart as $key => &$item) {
-                // Para invitados, $identifier es el product_id
-                if (($item['id'] ?? null) == $identifier) {
-                    $item['quantity'] = $quantity;
-                    $updated = true;
-                    $productIdForResponse = $identifier; // Usar el identifier como product_id
-                    break;
+                    return back()->with('success', 'Cantidad del producto actualizada.');
                 }
             }
-            Session::put('cart', $sessionCart); // Guarda el carrito actualizado en la sesión
-
-            if (!$updated) {
-                Log::warning("Intento de actualizar producto con product_id {$identifier} en sesión, pero no encontrado.");
-                return response()->json(['message' => 'Producto no encontrado en el carrito de sesión.', 'status' => 'error'], 404);
-            }
-            $updatedSuccessfully = true;
-        }
-
-        if (!$updatedSuccessfully) {
-            return response()->json(['message' => 'No se pudo actualizar el producto en el carrito.', 'status' => 'error'], 500);
-        }
-
-        // Recalcular y devolver los nuevos totales
-        $formattedCartItems = $this->getFormattedCartItems();
-        $cartTotals = $this->calculateCartTotals($formattedCartItems);
-
-        // Buscar el item que se acaba de actualizar en la lista formateada para devolverlo
-        $updatedFormattedItem = null;
-        if ($productIdForResponse) {
-            foreach ($formattedCartItems as $item) {
-                if (($item['product_id'] ?? null) == $productIdForResponse) {
-                    $updatedFormattedItem = $item;
-                    break;
-                }
+        } else {
+            $cart = Session::get('cart', []);
+            if (isset($cart[$productId])) {
+                $cart[$productId]['quantity'] = $quantity;
+                Session::put('cart', $cart);
+                return back()->with('success', 'Cantidad del producto actualizada.');
             }
         }
-
-        return response()->json(array_merge($cartTotals, [
-            'message' => 'Cantidad actualizada.',
-            'status' => 'success',
-            'item' => $updatedFormattedItem // Devolver el item actualizado para reflejar cambios en la UI
-        ]));
+        return back()->with('error', 'Producto no encontrado en el carrito.');
     }
 
     /**
      * Elimina un producto del carrito.
-     * El frontend debe enviar 'id' (que puede ser cart_item_id para DB o product_id para sesión).
      *
      * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\Http\RedirectResponse
      */
-    public function remove(Request $request)
+    public function removeFromCart(Request $request)
     {
-        $identifier = $request->input('id'); // ID del CartItem (para logueado) o product_id (para invitado)
+        $productId = $request->input('product_id');
 
-        $deleted = false;
         if (Auth::check()) {
             $user = Auth::user();
-            $cart = $user->cart;
+            $cart = $user->cart()->first();
             if ($cart) {
-                // Para usuarios logueados, $identifier es el ID del CartItem
-                $deleted = $cart->cartItems()->where('id', $identifier)->delete();
-                if (!$deleted) {
-                    Log::warning("Intento de eliminar CartItem con ID {$identifier} para usuario {$user->id}, pero no encontrado.");
-                }
-            } else {
-                Log::warning("Usuario {$user->id} no tiene carrito asociado al intentar eliminar.");
+                $cart->cartItems()->where('product_id', $productId)->delete();
             }
-        } else { // Carrito de invitado (sesión)
-            $sessionCart = Session::get('cart', []);
-            $initialCount = count($sessionCart);
-            $sessionCart = array_filter($sessionCart, function (array $item) use ($identifier) {
-                // Para invitados, $identifier es el product_id
-                return ($item['id'] ?? null) != $identifier;
-            });
-            // Reindexar el array para evitar problemas con las claves después de filtrar
-            $sessionCart = array_values($sessionCart);
-            Session::put('cart', $sessionCart);
-            $deleted = (count($sessionCart) < $initialCount); // Si el conteo disminuyó, algo se eliminó
-            if (!$deleted) {
-                    Log::warning("Intento de eliminar producto con product_id {$identifier} en sesión, pero no encontrado.");
+        } else {
+            $cart = Session::get('cart', []);
+            if (isset($cart[$productId])) {
+                unset($cart[$productId]);
+                Session::put('cart', $cart);
             }
         }
-
-        if (!$deleted) {
-            return response()->json(['message' => 'Producto no encontrado en el carrito para eliminar.', 'status' => 'error'], 404);
-        }
-
-        // Recalcular y devolver los nuevos totales
-        $formattedCartItems = $this->getFormattedCartItems();
-        $cartTotals = $this->calculateCartTotals($formattedCartItems);
-
-        return response()->json(array_merge($cartTotals, [
-            'message' => 'Producto eliminado del carrito.',
-            'status' => 'success',
-            'cartCount' => $cartTotals['cartCount'] // Asegúrate de que esto sea el conteo total de unidades
-        ]));
+        return back()->with('success', 'Producto eliminado del carrito.');
     }
 
     /**
-     * Obtiene el conteo total de unidades en el carrito (para la API).
+     * Vacía completamente el carrito.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\Http\RedirectResponse
      */
-    public function getCartItemCount()
+    public function clearCart()
     {
-        $count = 0;
         if (Auth::check()) {
             $user = Auth::user();
-            $cart = $user->cart()->first(); // Cargar el carrito del usuario
-            // Suma la cantidad de todos los ítems en el carrito del usuario
-            $count = $cart ? ($cart->cartItems ?? collect())->sum('quantity') : 0;
+            $cart = $user->cart()->first();
+            if ($cart) {
+                $cart->cartItems()->delete();
+            }
         } else {
-            $sessionCart = Session::get('cart', []);
-            // Asegúrate de que $sessionCart sea un array
-            if (!is_array($sessionCart)) {
-                $sessionCart = [];
-            }
-            // Suma la cantidad de todos los ítems en el carrito de la sesión
-            foreach ($sessionCart as $item) {
-                $count += $item['quantity'] ?? 0; // Usar null coalescing para seguridad
-            }
+            Session::forget('cart');
         }
-        return response()->json(['cartCount' => $count]);
+        return back()->with('success', 'El carrito ha sido vaciado.');
     }
 
     /**
-     * Obtiene los ítems del carrito formateados con precios netos y brutos.
+     * Obtiene los ítems del carrito formateados con precios brutos.
+     * Utilizado tanto para mostrar el carrito como para calcular los totales.
      *
-     * @return array
+     * @return \Illuminate\Support\Collection
      */
-    public function getFormattedCartItems(): array
+    public function getFormattedCartItems()
     {
-        $formattedItems = [];
+        $rawCartItems = collect();
 
         if (Auth::check()) {
             $user = Auth::user();
-            $cart = $user->cart()->with('cartItems.product')->first(); // Carga las relaciones product
+            $cart = $user->cart()->with('cartItems.product')->first();
             if ($cart) {
-                // Asegura que cartItems sea una colección, incluso si la relación es null
-                $cartItemsCollection = $cart->cartItems ?? collect();
-                foreach ($cartItemsCollection as $cartItem) {
-                    if ($cartItem->product) {
-                        $priceNet = (float) $cartItem->product->price;
-                        $subtotalNet = $cartItem->quantity * $priceNet;
-                        $subtotalGross = round($subtotalNet * (1 + self::IVA_RATE), 2);
-
-                        $formattedItems[] = [
-                            'id' => $cartItem->id, // ID del CartItem (para actualizar/eliminar en DB)
-                            'product_id' => $cartItem->product_id, // ID del Producto (para referencias/visualización)
-                            'name' => $cartItem->product->name,
-                            'quantity' => $cartItem->quantity,
-                            'price_net' => $priceNet,
-                            'subtotal_item_net' => $subtotalNet,
-                            'subtotal_item_gross' => $subtotalGross,
-                            'image_url' => $cartItem->product->image_url ?? asset('images/default_product.png'), // Fallback de imagen
-                        ];
-                    } else {
-                        // Loguear y eliminar ítems huérfanos (si el producto asociado ya no existe)
-                        Log::warning("CartItem {$cartItem->id} (product_id: {$cartItem->product_id}) tiene un producto no encontrado. Eliminando.");
-                        $cartItem->delete();
-                    }
-                }
+                $rawCartItems = $cart->cartItems->filter(fn($item) => $item->product);
             }
         } else {
             $sessionCart = Session::get('cart', []);
-            $validSessionCart = []; // Para reconstruir un carrito de sesión válido
-            foreach ($sessionCart as $item) {
-                $product = Product::find($item['id'] ?? null); // 'id' en sesión es el product_id
+            foreach ($sessionCart as $itemData) {
+                $product = Product::find($itemData['id']);
                 if ($product) {
-                    $priceNet = (float) $product->price;
-                    $subtotalNet = ($item['quantity'] ?? 0) * $priceNet;
-                    $subtotalGross = round($subtotalNet * (1 + self::IVA_RATE), 2);
-
-                    $validSessionCart[] = [
-                        'id' => $item['id'], // Para la UI/JS, sigue siendo el product_id en sesión
-                        'product_id' => $item['id'], // También product_id para consistencia
-                        'name' => $item['name'] ?? $product->name, // Usa el nombre del producto si no está en sesión
-                        'quantity' => $item['quantity'] ?? 0, // Fallback por si 'quantity' no está
-                        'price_net' => $priceNet,
-                        'subtotal_item_net' => $subtotalNet,
-                        'subtotal_item_gross' => $subtotalGross,
-                        'image_url' => $product->image_url ?? asset('images/default_product.png'), // Fallback de imagen
-                    ];
-                } else {
-                    Log::warning("Producto con ID {$item['id']} en sesión no encontrado. Se omitirá del carrito.");
+                    $rawCartItems->push((object)[ // Convertir a objeto para consistencia
+                        'product_id' => $product->id,
+                        'product' => $product,
+                        'quantity' => $itemData['quantity'],
+                    ]);
                 }
             }
-            // Si se eliminaron ítems inválidos, actualizar la sesión
-            if (count($validSessionCart) !== count($sessionCart)) {
-                Session::put('cart', $validSessionCart);
-            }
-            $formattedItems = $validSessionCart;
         }
+
+        // Formatear ítems para la vista y cálculos, incluyendo el precio bruto
+        $formattedItems = $rawCartItems->map(function($item) {
+            $productPriceNet = $item->product->price;
+            $productPriceGross = $productPriceNet * (1 + $this->ivaRate);
+
+            // Usar sprintf para asegurar 2 decimales y luego castear a float
+            $unitPriceDisplay = (float) sprintf("%.2f", $productPriceGross);
+            $subtotalDisplay = (float) sprintf("%.2f", $productPriceGross * $item->quantity);
+
+            return (object)[
+                'id'         => $item->product_id,
+                'name'       => $item->product->name,
+                'price_net'  => (float) sprintf("%.2f", $productPriceNet),
+                'price_gross'=> $unitPriceDisplay, // Precio unitario con IVA para mostrar
+                'image'      => $item->product->image_url ?? asset('images/default_product.png'),
+                'quantity'   => $item->quantity,
+                'subtotal'   => $subtotalDisplay, // Subtotal de este ítem (cantidad * precio bruto)
+            ];
+        });
 
         return $formattedItems;
     }
 
     /**
-     * Calcula todos los totales del carrito.
+     * Calcula los totales del carrito incluyendo IVA y comisión de Mercado Pago.
      *
-     * @param array $cartItems // Este es el array de ítems formateados que espera
+     * @param \Illuminate\Support\Collection $cartItems Ítems del carrito ya formateados con precios brutos.
      * @return array
      */
-    public function calculateCartTotals(array $cartItems)
+    public function calculateCartTotals($cartItems)
     {
-        $subtotal_net_products = 0;
-        $subtotal_gross_products = 0;
-        $cartCount = 0; // Para el conteo total de unidades
+        $subtotalNetProducts = 0;
+        $subtotalGrossProducts = 0;
 
         foreach ($cartItems as $item) {
-            $subtotal_net_products += $item['subtotal_item_net'] ?? 0;
-            $subtotal_gross_products += $item['subtotal_item_gross'] ?? 0;
-            $cartCount += $item['quantity'] ?? 0;
+            $subtotalNetProducts += $item->price_net * $item->quantity;
+            $subtotalGrossProducts += $item->price_gross * $item->quantity;
         }
 
-        // Cálculo del IVA de los productos
-        // Se calcula sobre el subtotal bruto para obtener la porción de IVA
-        $iva_products_amount = round($subtotal_gross_products - ($subtotal_gross_products / (1 + self::IVA_RATE)), 2);
+        // Asegurar que los subtotales también tengan 2 decimales de precisión
+        $subtotalNetProducts = (float) sprintf("%.2f", $subtotalNetProducts);
+        $subtotalGrossProducts = (float) sprintf("%.2f", $subtotalGrossProducts);
 
-        // Cálculo de la comisión de Mercado Pago
-        $commission_percent_value = $subtotal_gross_products * self::MP_COMMISSION_PERCENTAGE;
-        $iva_on_commission_percent = $commission_percent_value * self::IVA_RATE; // IVA sobre la comisión porcentual
-        $mp_fee_amount = round(($commission_percent_value + $iva_on_commission_percent) + self::MP_FIXED_FEE, 2);
+        $ivaProductsAmount = (float) sprintf("%.2f", $subtotalGrossProducts - $subtotalNetProducts);
 
-        // Cálculo del total final
-        $final_total = round($subtotal_gross_products + $mp_fee_amount, 2);
+        // Cálculo de la comisión de Mercado Pago sobre el subtotal bruto de los productos
+        $mpFeeAmountRaw = ($subtotalGrossProducts * $this->mpFeeRate) + $this->mpFixedFee;
+        $mpFeeAmount = (float) sprintf("%.2f", $mpFeeAmountRaw);
+
+        $finalTotal = (float) sprintf("%.2f", $subtotalGrossProducts + $mpFeeAmount);
+
+        // --- Logging para depuración en el CartController ---
+        \Log::info('Calculando totales en CartController:', [
+            'subtotal_net_productos'  => $subtotalNetProducts,
+            'iva_productos_calculado' => $ivaProductsAmount,
+            'subtotal_gross_productos'=> $subtotalGrossProducts,
+            'comision_mp_bruta_calculada' => $mpFeeAmountRaw, // Valor antes de formatear
+            'comision_mp_final'       => $mpFeeAmount, // Valor formateado a 2 decimales
+            'total_final_calculado'   => $finalTotal,
+            'mp_fee_rate'             => $this->mpFeeRate,
+            'mp_fixed_fee'            => $this->mpFixedFee,
+        ]);
+        // --- Fin de Logging ---
 
         return [
-            'cartItems' => $cartItems,
-            'subtotal_net_products' => round($subtotal_net_products, 2),
-            'iva_products_amount' => $iva_products_amount,
-            'subtotal_gross_products' => round($subtotal_gross_products, 2),
-            'mp_fee_amount' => $mp_fee_amount,
-            'final_total' => $final_total,
-            'cartCount' => $cartCount
+            'subtotal_net_products'   => $subtotalNetProducts,
+            'iva_products_amount'     => $ivaProductsAmount,
+            'subtotal_gross_products' => $subtotalGrossProducts,
+            'mp_fee_amount'           => $mpFeeAmount,
+            'final_total'             => $finalTotal,
         ];
-    }
-
-    /**
-     * Método de depuración: Limpia el carrito y añade un producto de prueba.
-     * Luego, loguea los totales calculados.
-     *
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function testCartPopulateAndCalculate()
-    {
-        Log::info('--- INICIANDO TEST DE CÁLCULO DE CARRITO ---');
-
-        // 1. Limpiar el carrito existente
-        if (Auth::check()) {
-            $user = Auth::user();
-            $cart = $user->cart;
-            if ($cart) {
-                $cart->cartItems()->delete();
-                Log::info('Carrito de usuario ' . $user->id . ' limpiado para la prueba.');
-            } else {
-                // Si no hay carrito, se creará uno al añadir el producto
-                Log::info('No se encontró carrito para el usuario ' . $user->id . ', se creará uno.');
-            }
-        } else {
-            Session::forget('cart');
-            Log::info('Carrito de sesión limpiado para la prueba.');
-        }
-
-        // 2. Crear o usar un producto de prueba
-        $testProductId = 9999; // Un ID que es poco probable que exista en producción
-        $testProductName = 'Producto de Prueba Debug';
-        $testProductPrice = 50000; // Precio neto fijo (50.000 COP)
-        $testProductQuantity = 2; // Cantidad fija
-
-        // Intenta encontrar el producto real, si no existe, crea un objeto Product mock
-        $product = Product::find($testProductId);
-
-        if (!$product) {
-            // Crea un objeto Product "mock" solo para esta prueba, sin guardarlo en DB
-            $product = new Product([
-                'id' => $testProductId,
-                'name' => $testProductName,
-                'price' => $testProductPrice,
-                'image_url' => asset('images/default_product.png'),
-                // Asegúrate de incluir cualquier otra propiedad que tu `CartController` espere
-            ]);
-            Log::warning('Producto con ID ' . $testProductId . ' no encontrado en la DB. Usando un producto mock para la prueba.');
-        } else {
-            // Si el producto existe, ajusta su precio al valor de prueba para asegurar consistencia
-            $product->price = $testProductPrice;
-            Log::info('Usando producto existente con ID ' . $product->id . ' para la prueba, precio ajustado a ' . $testProductPrice);
-        }
-
-        // 3. Añadir el producto de prueba al carrito (usando la lógica de add())
-        $request = Request::create('/cart/add', 'POST', [
-            'product_id' => $product->id,
-            'quantity' => $testProductQuantity,
-        ]);
-
-        // Asegurarse de que el request se interprete como AJAX para obtener JSON de respuesta de add()
-        $request->headers->set('Accept', 'application/json');
-        $request->headers->set('X-Requested-With', 'XMLHttpRequest');
-
-        // Llama directamente al método add para simular la adición
-        $this->add($request);
-        Log::info('Producto de prueba añadido al carrito: ' . $product->name . ' x ' . $testProductQuantity);
-
-        // 4. Obtener ítems formateados y calcular totales
-        $cartItems = $this->getFormattedCartItems();
-        $totals = $this->calculateCartTotals($cartItems);
-
-        // 5. Loguear los resultados detalladamente
-        Log::info('--- RESULTADOS DEL TEST DE CÁLCULO DE CARRITO ---');
-        Log::info('Ítems formateados para el carrito:', $cartItems);
-        Log::info('Totales del carrito calculados:', $totals);
-
-        Log::info('Verificaciones Clave:');
-        Log::info('Subtotal NETO de productos esperados: ' . ($testProductPrice * $testProductQuantity));
-        Log::info('Subtotal BRUTO de productos esperados (IVA inc.): ' . round(($testProductPrice * $testProductQuantity) * (1 + self::IVA_RATE), 2));
-        Log::info('Comisión MP esperada: ' . round((($testProductPrice * $testProductQuantity) * (1 + self::IVA_RATE)) * self::MP_COMMISSION_PERCENTAGE * (1 + self::IVA_RATE) + self::MP_FIXED_FEE, 2));
-        Log::info('Total FINAL esperado: ' . round((($testProductPrice * $testProductQuantity) * (1 + self::IVA_RATE)) + round((($testProductPrice * $testProductQuantity) * (1 + self::IVA_RATE)) * self::MP_COMMISSION_PERCENTAGE * (1 + self::IVA_RATE) + self::MP_FIXED_FEE, 2), 2));
-        Log::info('--- FIN DEL TEST DE CÁLCULO DE CARRITO ---');
-
-        // Redirigir al usuario a la vista del carrito para que pueda ver los cambios
-        return redirect()->route('cart.show')->with('success', 'Carrito poblado con datos de prueba. Revisa los logs para los cálculos.');
     }
 }
