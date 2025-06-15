@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Session;
 use App\Models\Product;
 use App\Models\Cart;
 use App\Models\CartItem;
-use Illuminate\Support\Facades\Log; // Asegúrate de tener esto
+use Illuminate\Support\Facades\Log;
 
 class CartController extends Controller
 {
@@ -237,7 +237,7 @@ class CartController extends Controller
             Session::put('cart', $sessionCart);
             $deleted = (count($sessionCart) < $initialCount); // Si el conteo disminuyó, algo se eliminó
             if (!$deleted) {
-                 Log::warning("Intento de eliminar producto con product_id {$identifier} en sesión, pero no encontrado.");
+                    Log::warning("Intento de eliminar producto con product_id {$identifier} en sesión, pero no encontrado.");
             }
         }
 
@@ -394,5 +394,90 @@ class CartController extends Controller
             'final_total' => $final_total,
             'cartCount' => $cartCount
         ];
+    }
+
+    /**
+     * Método de depuración: Limpia el carrito y añade un producto de prueba.
+     * Luego, loguea los totales calculados.
+     *
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function testCartPopulateAndCalculate()
+    {
+        Log::info('--- INICIANDO TEST DE CÁLCULO DE CARRITO ---');
+
+        // 1. Limpiar el carrito existente
+        if (Auth::check()) {
+            $user = Auth::user();
+            $cart = $user->cart;
+            if ($cart) {
+                $cart->cartItems()->delete();
+                Log::info('Carrito de usuario ' . $user->id . ' limpiado para la prueba.');
+            } else {
+                // Si no hay carrito, se creará uno al añadir el producto
+                Log::info('No se encontró carrito para el usuario ' . $user->id . ', se creará uno.');
+            }
+        } else {
+            Session::forget('cart');
+            Log::info('Carrito de sesión limpiado para la prueba.');
+        }
+
+        // 2. Crear o usar un producto de prueba
+        $testProductId = 9999; // Un ID que es poco probable que exista en producción
+        $testProductName = 'Producto de Prueba Debug';
+        $testProductPrice = 50000; // Precio neto fijo (50.000 COP)
+        $testProductQuantity = 2; // Cantidad fija
+
+        // Intenta encontrar el producto real, si no existe, crea un objeto Product mock
+        $product = Product::find($testProductId);
+
+        if (!$product) {
+            // Crea un objeto Product "mock" solo para esta prueba, sin guardarlo en DB
+            $product = new Product([
+                'id' => $testProductId,
+                'name' => $testProductName,
+                'price' => $testProductPrice,
+                'image_url' => asset('images/default_product.png'),
+                // Asegúrate de incluir cualquier otra propiedad que tu `CartController` espere
+            ]);
+            Log::warning('Producto con ID ' . $testProductId . ' no encontrado en la DB. Usando un producto mock para la prueba.');
+        } else {
+            // Si el producto existe, ajusta su precio al valor de prueba para asegurar consistencia
+            $product->price = $testProductPrice;
+            Log::info('Usando producto existente con ID ' . $product->id . ' para la prueba, precio ajustado a ' . $testProductPrice);
+        }
+
+        // 3. Añadir el producto de prueba al carrito (usando la lógica de add())
+        $request = Request::create('/cart/add', 'POST', [
+            'product_id' => $product->id,
+            'quantity' => $testProductQuantity,
+        ]);
+
+        // Asegurarse de que el request se interprete como AJAX para obtener JSON de respuesta de add()
+        $request->headers->set('Accept', 'application/json');
+        $request->headers->set('X-Requested-With', 'XMLHttpRequest');
+
+        // Llama directamente al método add para simular la adición
+        $this->add($request);
+        Log::info('Producto de prueba añadido al carrito: ' . $product->name . ' x ' . $testProductQuantity);
+
+        // 4. Obtener ítems formateados y calcular totales
+        $cartItems = $this->getFormattedCartItems();
+        $totals = $this->calculateCartTotals($cartItems);
+
+        // 5. Loguear los resultados detalladamente
+        Log::info('--- RESULTADOS DEL TEST DE CÁLCULO DE CARRITO ---');
+        Log::info('Ítems formateados para el carrito:', $cartItems);
+        Log::info('Totales del carrito calculados:', $totals);
+
+        Log::info('Verificaciones Clave:');
+        Log::info('Subtotal NETO de productos esperados: ' . ($testProductPrice * $testProductQuantity));
+        Log::info('Subtotal BRUTO de productos esperados (IVA inc.): ' . round(($testProductPrice * $testProductQuantity) * (1 + self::IVA_RATE), 2));
+        Log::info('Comisión MP esperada: ' . round((($testProductPrice * $testProductQuantity) * (1 + self::IVA_RATE)) * self::MP_COMMISSION_PERCENTAGE * (1 + self::IVA_RATE) + self::MP_FIXED_FEE, 2));
+        Log::info('Total FINAL esperado: ' . round((($testProductPrice * $testProductQuantity) * (1 + self::IVA_RATE)) + round((($testProductPrice * $testProductQuantity) * (1 + self::IVA_RATE)) * self::MP_COMMISSION_PERCENTAGE * (1 + self::IVA_RATE) + self::MP_FIXED_FEE, 2), 2));
+        Log::info('--- FIN DEL TEST DE CÁLCULO DE CARRITO ---');
+
+        // Redirigir al usuario a la vista del carrito para que pueda ver los cambios
+        return redirect()->route('cart.show')->with('success', 'Carrito poblado con datos de prueba. Revisa los logs para los cálculos.');
     }
 }
