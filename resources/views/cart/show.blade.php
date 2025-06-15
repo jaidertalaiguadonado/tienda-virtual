@@ -7,306 +7,681 @@
     <title>{{ config('app.name', 'Mi Tienda') }}</title>
     {{-- Aquí podrías enlazar tus hojas de estilo CSS --}}
     <style>
-        /* Estilos básicos para la demostración */
-        body {
-            font-family: sans-serif;
-            margin: 0;
-            background-color: #f4f4f4;
-            color: #333;
-        }
-        .navbar {
-            background-color: #333;
-            color: white;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .navbar-brand {
-            color: white;
-            text-decoration: none;
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-        .navbar-links {
-            display: flex;
-            gap: 1.5rem;
-        }
-        .navbar-links-mobile {
-            display: none; /* Oculto por defecto, se muestra con JS en pantallas pequeñas */
-            flex-direction: column;
-            position: absolute;
-            top: 60px; /* Ajustar según la altura de tu navbar */
-            left: 0;
-            width: 100%;
-            background-color: #444;
-            padding: 1rem 2rem;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            z-index: 1000;
-        }
-        .navbar-links-mobile.active {
-            display: flex;
-        }
-        .navbar-link, .logout-button-navbar {
-            color: white;
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-        .navbar-link:hover, .logout-button-navbar:hover {
-            background-color: #555;
-        }
-        .logout-button-navbar {
-            padding: 0; /* Para que no tenga padding extra si es solo texto */
-            text-align: left; /* Alinea el texto a la izquierda en el menú móvil */
-        }
-        .menu-toggle {
-            display: none; /* Oculto por defecto, se muestra en pantallas pequeñas */
-            background: none;
-            border: none;
-            color: white;
-            font-size: 2rem;
-            cursor: pointer;
-        }
+:root {
+    --primary-color: #007BFF;
+    --primary-light: #66B2FF;
+    --secondary-color: #17A2B8;
+    --text-dark: #212529;
+    --text-light: #6C757D;
+    --background-light: #F8F9FA;
+    --card-background: #ffffff;
+    --border-color: #DEE2E6;
+    --button-text: #ffffff;
+    --logout-color: #DC3545;
+    --logout-light: #E65F6C;
+    --stock-available: #28A745;
+    --stock-unavailable: #DC3545;
+    --remove-button-color: #DC3545; /* ¡Ya estaba definido como rojo! */
+    --remove-button-hover: #E65F6C;
+    --quantity-button-color: #007BFF;
+    --quantity-button-hover: #66B2FF;
+    --success-color: #28a745;
+    --error-color: #dc3545;
+    --info-color: #17a2b8;
 
-        .cart-container {
-            max-width: 1000px;
-            margin: 2rem auto;
-            padding: 1.5rem;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .cart-title {
-            text-align: center;
-            color: #333;
-            margin-bottom: 1.5rem;
-            font-size: 2rem;
-        }
-        .cart-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 2rem;
-        }
-        .cart-table th, .cart-table td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #ddd;
-            text-align: left;
-        }
-        .cart-table th {
-            background-color: #f8f8f8;
-            font-weight: bold;
-            color: #555;
-        }
-        .cart-table td {
-            vertical-align: middle;
-        }
-        .cart-item-image {
-            width: 60px;
-            height: 60px;
-            object-fit: cover;
-            border-radius: 4px;
-            margin-right: 10px;
-            vertical-align: middle;
-        }
-        .cart-item-name {
-            font-weight: 500;
-        }
-        .quantity-controls {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .quantity-button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 6px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 1rem;
-            transition: background-color 0.2s;
-        }
-        .quantity-button:hover {
-            background-color: #0056b3;
-        }
-        .quantity-input {
-            width: 50px;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            text-align: center;
-            -moz-appearance: textfield; /* Para Firefox */
-        }
-        .quantity-input::-webkit-outer-spin-button,
-        .quantity-input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
+    /* Nuevas variables para el botón de Mercado Pago */
+    --mercadopago-button-color: #009EE3; /* Azul de Mercado Pago */
+    --mercadopago-button-hover: #008ACD;
+    --mercadopago-text-color: #ffffff;
+}
 
-        .remove-item, .remove-button { /* Mantengo ambos por si el CSS se usaba con ambos */
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        .remove-item:hover, .remove-button:hover {
-            background-color: #c82333;
-        }
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
 
-        .cart-summary {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 10px;
-            border-top: 1px solid #eee;
-            padding-top: 1.5rem;
-            margin-top: 1.5rem;
-        }
-        .cart-summary p {
-            margin: 0;
-            font-size: 1.1rem;
-            color: #555;
-        }
-        .cart-summary .final-total-row {
-            font-size: 1.4rem;
-            color: #333;
-            font-weight: bold;
-            border-top: 2px solid #007bff;
-            padding-top: 10px;
-            width: 100%;
-            text-align: right;
-        }
+body {
+    font-family: 'Open Sans', sans-serif;
+    background-color: var(--background-light);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.6;
+    color: var(--text-dark);
+    font-size: 16px;
 
-        .empty-cart-message {
-            text-align: center;
-            font-size: 1.2rem;
-            color: #777;
-            padding: 3rem 0;
-        }
+    /* Sticky Footer - Flexbox layout */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
 
-        .cart-actions, .empty-cart-actions {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 2rem;
-            flex-wrap: wrap; /* Permite que los botones se envuelvan en pantallas pequeñas */
-            gap: 1rem; /* Espacio entre los botones */
-        }
-        .cart-actions.empty-cart-actions {
-            justify-content: center; /* Centra el botón cuando el carrito está vacío */
-        }
+a {
+    text-decoration: none;
+    color: inherit;
+}
 
-        .continue-shopping-button, .mercadopago-pay-button {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 5px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            text-decoration: none; /* Para el anchor */
-            text-align: center;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-        }
-        .continue-shopping-button {
-            background-color: #6c757d;
-            color: white;
-        }
-        .continue-shopping-button:hover {
-            background-color: #5a6268;
-            transform: translateY(-2px);
-        }
-        .mercadopago-pay-button {
-            background-color: #009ee3; /* Color de Mercado Pago */
-            color: white;
-        }
-        .mercadopago-pay-button:hover {
-            background-color: #007bb6;
-            transform: translateY(-2px);
-        }
+/* Navbar Styles */
+.navbar {
+    background-color: var(--card-background);
+    border-bottom: 1px solid var(--border-color);
+    padding: 1.2rem 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 1000;
+    flex-shrink: 0;
+}
 
-        .footer {
-            text-align: center;
-            padding: 1.5rem;
-            margin-top: 3rem;
-            background-color: #333;
-            color: white;
-            font-size: 0.9rem;
-        }
+.navbar-brand {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--primary-color);
+}
 
-        /* Media Queries para diseño responsivo */
-        @media (max-width: 768px) {
-            .navbar-links {
-                display: none; /* Oculta el menú grande */
-            }
-            .menu-toggle {
-                display: block; /* Muestra el botón de hamburguesa */
-            }
-            .cart-table thead {
-                display: none; /* Oculta el encabezado de la tabla en móvil */
-            }
-            .cart-table, .cart-table tbody, .cart-table tr, .cart-table td {
-                display: block;
-                width: 100%;
-            }
-            .cart-table tr {
-                margin-bottom: 1rem;
-                border: 1px solid #ddd;
-                display: flex;
-                flex-wrap: wrap;
-                padding: 10px;
-                border-radius: 8px;
-            }
-            .cart-table td {
-                text-align: right;
-                padding-left: 50%;
-                position: relative;
-                border: none;
-                width: 100%; /* Cada celda ocupa todo el ancho */
-            }
-            .cart-table td::before {
-                content: attr(data-label);
-                position: absolute;
-                left: 10px;
-                width: calc(50% - 20px);
-                text-align: left;
-                font-weight: bold;
-                color: #555;
-            }
-            .cart-item-image {
-                float: left; /* Alinea la imagen a la izquierda */
-                margin-bottom: 10px;
-            }
-            .cart-item-name {
-                display: block;
-                text-align: left;
-                margin-left: 70px; /* Espacio para la imagen */
-            }
-            .quantity-controls {
-                justify-content: flex-end; /* Alinea los controles de cantidad a la derecha */
-            }
-            .cart-summary {
-                align-items: center; /* Centra el resumen en móvil */
-                text-align: center;
-            }
-            .cart-summary .final-total-row {
-                text-align: center;
-            }
-            .cart-actions {
-                flex-direction: column; /* Apila los botones de acción */
-                align-items: center;
-            }
-            .continue-shopping-button, .mercadopago-pay-button {
-                width: 100%; /* Botones de ancho completo */
-            }
-        }
+.menu-toggle {
+    display: none;
+    font-size: 2rem;
+    background: none;
+    border: none;
+    color: var(--text-dark);
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.navbar-links {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.navbar-links-mobile {
+    display: none;
+    flex-direction: column;
+    background-color: var(--card-background);
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    border-top: 1px solid var(--border-color);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    z-index: 999;
+    padding: 1rem 0;
+}
+
+.navbar-links-mobile.active {
+    display: flex;
+}
+
+.navbar-links-mobile .navbar-link,
+.navbar-links-mobile .logout-button-navbar {
+    padding: 0.8rem 2rem;
+    text-align: center;
+    width: auto;
+    margin: 0.2rem 1rem;
+}
+
+.navbar-links-mobile .logout-button-navbar {
+    width: calc(100% - 2rem);
+}
+
+.navbar-link {
+    color: var(--text-dark);
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.navbar-link:hover {
+    color: var(--primary-color);
+}
+
+.logout-button-navbar {
+    background-color: var(--logout-color);
+    color: var(--button-text);
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.logout-button-navbar:hover {
+    background-color: var(--logout-light);
+    transform: translateY(-1px);
+}
+
+.logout-button-navbar:focus {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.4);
+}
+
+/* Main Content Area */
+.cart-container {
+    max-width: 1000px;
+    margin: 3rem auto;
+    padding: 2rem;
+    background-color: var(--card-background);
+    border-radius: 1rem;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    flex-grow: 1;
+}
+
+.cart-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--primary-color); /* CAMBIO: Color azul para el título */
+    margin-bottom: 2.5rem;
+    text-align: center;
+}
+
+.cart-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 2rem;
+    text-align: left;
+}
+
+.cart-table th, .cart-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.cart-table th {
+    background-color: var(--background-light);
+    font-weight: 700;
+    color: var(--text-dark);
+    text-transform: uppercase;
+    font-size: 0.9rem;
+}
+
+.cart-table td {
+    font-size: 1rem;
+    color: var(--text-dark);
+}
+
+/* CAMBIO: Aplicar color azul a la celda del precio unitario */
+.cart-table td[data-label="Precio Unitario:"] {
+    color: var(--primary-color);
+    font-weight: 600; /* Añadir bold para que resalte más */
+}
+
+
+.cart-item-image {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    border-radius: 0.5rem;
+    vertical-align: middle;
+    margin-right: 1rem;
+    border: 1px solid var(--border-color);
+}
+
+.cart-item-name {
+    font-weight: 600;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.quantity-button {
+    background-color: var(--primary-color);
+    color: var(--button-text);
+    border: none;
+    border-radius: 0.3rem;
+    width: 30px;
+    height: 30px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.quantity-button:hover {
+    background-color: var(--primary-light);
+}
+
+.quantity-button:disabled {
+    background-color: var(--text-light);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.quantity-input {
+    width: 60px;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.3rem;
+    text-align: center;
+    font-size: 1rem;
+    -moz-appearance: textfield; /* Para Firefox */
+}
+/* Ocultar flechas en inputs tipo number para Chrome, Safari, Edge, Opera */
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+
+.remove-button {
+    /* Ya estaba definido para usar --remove-button-color que es rojo y button-text que es blanco */
+    background-color: var(--remove-button-color); /* Esto es #DC3545 (rojo) */
+    color: var(--button-text); /* Esto es #ffffff (blanco) */
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.remove-button:hover {
+    background-color: var(--remove-button-hover);
+    transform: translateY(-1px);
+}
+
+/* Desglose de Totales */
+.cart-summary {
+    background-color: var(--background-light);
+    border: 1px solid var(--border-color);
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    font-size: 1.1rem;
+}
+
+.cart-summary div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px dashed #e0e0e0;
+}
+
+/* CAMBIO: Aplicar color azul a la última línea del resumen (Total Final a Pagar) */
+.cart-summary div:last-child {
+    border-bottom: none;
+    font-weight: bold;
+    font-size: 1.3rem;
+    color: var(--primary-color); /* CAMBIO: Usar primary-color para el total final */
+}
+
+
+.empty-cart-message {
+    font-size: 1.5rem;
+    color: var(--text-light);
+    margin-top: 3rem;
+    margin-bottom: 3rem;
+    text-align: center;
+}
+
+.cart-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.cart-actions .continue-shopping-button,
+.cart-actions .mercadopago-pay-button,
+.cart-actions form {
+    /* No se aplican flex: 1, min-width, max-width, box-sizing para estos elementos si los vas a quitar o estilizar de forma diferente */
+}
+
+.cart-actions form button {
+    width: 100%; /* Esto podría necesitar ajustarse si no usas los botones principales */
+}
+
+.continue-shopping-button {
+    background-color: var(--secondary-color);
+    color: var(--button-text);
+    display: inline-block;
+    padding: 0.8rem 2rem;
+    border-radius: 0.75rem;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    border: none;
+    cursor: pointer;
+}
+
+.continue-shopping-button:hover {
+    background-color: var(--secondary-color);
+    filter: brightness(0.9);
+    transform: translateY(-2px);
+}
+
+.mercadopago-pay-button {
+    background-color: var(--mercadopago-button-color);
+    color: var(--mercadopago-text-color);
+    display: inline-block;
+    padding: 0.8rem 2rem;
+    border-radius: 0.75rem;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    border: none;
+    cursor: pointer;
+}
+
+.mercadopago-pay-button:hover {
+    background-color: var(--mercadopago-button-hover);
+    transform: translateY(-2px);
+}
+
+/* Footer Styles */
+.footer {
+    background-color: var(--primary-color);
+    color: var(--button-text);
+    padding: 1.5rem 2rem;
+    text-align: center;
+    font-size: 0.9rem;
+    border-top-left-radius: 2rem;
+    border-top-right-radius: 2rem;
+    margin-top: 4rem;
+    flex-shrink: 0;
+}
+
+.footer p {
+    margin: 0;
+    opacity: 0.8;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .navbar {
+        padding: 1rem 1rem;
+        flex-wrap: wrap;
+    }
+    .navbar-brand {
+        font-size: 1.6rem;
+        margin-right: auto;
+    }
+    .navbar-links {
+        display: none;
+    }
+    .menu-toggle {
+        display: block;
+    }
+
+    .cart-container {
+        margin: 2rem 1rem;
+        padding: 1.5rem;
+    }
+
+    .cart-title {
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .cart-table, .cart-table tbody, .cart-table tr, .cart-table td, .cart-table th {
+        display: block;
+        width: 100%;
+    }
+
+    .cart-table thead {
+        display: none;
+    }
+
+    .cart-table tr {
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1rem;
+        box-sizing: border-box;
+    }
+
+    .cart-table td {
+        border-bottom: none;
+        text-align: left;
+        padding: 0.4rem 0;
+        position: relative;
+        width: 100%;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 0.5rem;
+        box-sizing: border-box;
+    }
+
+    .cart-table td:before {
+        content: attr(data-label);
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--text-light);
+        font-size: 0.75rem;
+        min-width: 80px;
+        flex-shrink: 0;
+    }
+
+    .cart-table td:first-child {
+        text-align: left;
+        flex-basis: 100%;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.8rem;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        padding-top: 0.5rem;
+        justify-content: flex-start;
+        gap: 0;
+    }
+
+    .cart-table td:first-child:before {
+        content: "";
+        display: none;
+    }
+
+    .cart-item-image {
+        width: 60px;
+        height: 60px;
+        margin-right: 1rem;
+    }
+
+    .cart-item-name {
+        flex-grow: 1;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+
+    .quantity-controls {
+        justify-content: flex-start;
+        width: auto;
+        margin-top: 0.5rem;
+        flex-basis: auto;
+        flex-grow: 1;
+    }
+
+    .quantity-input {
+        width: 50px;
+        padding: 0.4rem;
+        font-size: 1rem;
+    }
+    .quantity-button {
+        width: 30px;
+        height: 30px;
+        font-size: 1.2rem;
+    }
+
+    .remove-button {
+        width: 100%;
+        margin-top: 0.8rem;
+        align-self: center;
+        padding: 0.6rem 1rem;
+        font-size: 0.95rem;
+    }
+    .cart-table td[data-label="Acción:"] {
+        border-top: 1px dashed var(--border-color);
+        margin-top: 1rem;
+        padding-top: 1rem;
+        justify-content: center;
+    }
+    .cart-table td[data-label="Acción:"]:before {
+        display: none;
+    }
+
+    .cart-summary {
+        font-size: 1.5rem;
+        text-align: center;
+        padding-top: 1rem;
+    }
+
+    /* Keep the default flex behavior for summary items */
+    .cart-summary div {
+        justify-content: space-between;
+        text-align: left;
+    }
+
+
+    #cart-total {
+        display: block;
+        margin-left: 0;
+        margin-top: 0.5rem;
+    }
+
+    .empty-cart-message {
+        font-size: 1.2rem;
+    }
+
+    .footer {
+        padding: 1.5rem 1rem;
+        border-top-left-radius: 1rem;
+        border-top-right-radius: 1rem;
+        margin-top: 3rem;
+    }
+
+    .cart-actions {
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .cart-actions .continue-shopping-button,
+    .cart-actions .mercadopago-pay-button,
+    .cart-actions form {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9rem;
+        max-width: 250px;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        font-size: 14px;
+    }
+
+    .navbar {
+        padding: 0.8rem 0.8rem;
+    }
+
+    .navbar-brand {
+        font-size: 1.4rem;
+    }
+
+    .cart-title {
+        font-size: 1.6rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .cart-table tr {
+        padding: 0.8rem;
+    }
+
+    .cart-table td {
+        padding: 0.3rem 0;
+        gap: 0.3rem;
+    }
+
+    .cart-table td:before {
+        font-size: 0.7rem;
+        min-width: 65px;
+    }
+
+    .cart-table td:first-child {
+        padding-bottom: 0.6rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .cart-item-image {
+        width: 45px;
+        height: 45px;
+        margin-right: 0.8rem;
+    }
+
+    .quantity-controls {
+        gap: 0.2rem;
+    }
+    .quantity-input {
+        width: 40px;
+        padding: 0.25rem;
+        font-size: 0.9rem;
+    }
+    .quantity-button {
+        width: 28px;
+        height: 28px;
+        font-size: 1.1rem;
+    }
+
+    .remove-button {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.85rem;
+    }
+    /*solucion pcp */
+
+    .cart-table td[data-label="Acción:"] {
+        margin-top: 0.8rem;
+        padding-top: 0.8rem;
+    }
+
+    .cart-table td[data-label="Acción:"]:before {
+        display: none;
+    }
+
+    .cart-summary {
+        font-size: 1.2rem;
+        padding-top: 0.8rem;
+    }
+
+    .footer {
+        padding: 1rem 0.8rem;
+        margin-top: 2rem;
+    }
+
+    .cart-actions .continue-shopping-button,
+    .cart-actions .mercadopago-pay-button,
+    .cart-actions form {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9rem;
+        max-width: 250px;
+    }
+}
     </style>
 </head>
 <body>
