@@ -85,6 +85,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
         Route::resource('categories', CategoryController::class);
         Route::resource('products', ProductController::class);
         Route::resource('orders', OrderController::class)->only(['index', 'show', 'update', 'destroy']);
+        Route::get('/test-cart-populate', [CartController::class, 'testCartPopulateAndCalculate'])->name('test.cart.populate');
     });
 });
 
