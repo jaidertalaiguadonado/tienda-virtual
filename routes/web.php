@@ -42,7 +42,7 @@ Route::get('/api/cart-count', [CartController::class, 'getCartItemCount'])->name
 
 
 // =========================================================================
-// RUTAS QUE REQUIEREN AUTENTICACIÓN
+// RUTAS QUE REQUIEREN AUTENTICACIÓN (PARA CUALQUIER USUARIO LOGUEADO)
 // =========================================================================
 Route::middleware('auth')->group(function () {
 
@@ -53,7 +53,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/payment/success', [MercadoPagoController::class, 'paymentSuccess'])->name('mercadopago.success');
     Route::get('/payment/failure', [MercadoPagoController::class, 'paymentFailure'])->name('mercadopago.failure');
     Route::get('/payment/pending', [MercadoPagoController::class, 'paymentPending'])->name('mercadopago.pending');
-    Route::get('/test-cart-populate', [CartController::class, 'testCartPopulateAndCalculate'])->name('test.cart.populate');
 
     // Rutas de perfil de usuario
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -67,6 +66,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/user-dashboard', function () {
         return view('dashboard'); // Podrías crear una vista específica para user-dashboard
     })->name('user.dashboard');
+
+    // =====================================================================
+    // RUTA DE DEPURACIÓN DE CARRITO (AHORA SOLO REQUIERE AUTENTICACIÓN)
+    // =====================================================================
+    Route::get('/test-cart-populate', [CartController::class, 'testCartPopulateAndCalculate'])->name('test.cart.populate');
 
 });
 
@@ -86,7 +90,6 @@ Route::middleware(['auth', 'admin'])->group(function () {
         Route::resource('categories', CategoryController::class);
         Route::resource('products', ProductController::class);
         Route::resource('orders', OrderController::class)->only(['index', 'show', 'update', 'destroy']);
-        
     });
 });
 
