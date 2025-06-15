@@ -19,6 +19,13 @@ use App\Http\Controllers\Admin\OrderController; // Asegúrate de que esta línea
 |--------------------------------------------------------------------------
 */
 
+// =====================================================================
+// RUTA DE DEPURACIÓN DE CARRITO (TEMPORALMENTE PÚBLICA PARA DEBUG)
+// Una vez que funcione, puedes moverla de vuelta al grupo 'auth'.
+// =====================================================================
+Route::get('/test-cart-populate', [CartController::class, 'testCartPopulateAndCalculate'])->name('test.cart.populate');
+
+
 // Ruta de bienvenida - Accesible para todos
 Route::get('/', function () {
     $products = Product::with('category')->latest()->paginate(12);
@@ -66,11 +73,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/user-dashboard', function () {
         return view('dashboard'); // Podrías crear una vista específica para user-dashboard
     })->name('user.dashboard');
-
-    // =====================================================================
-    // RUTA DE DEPURACIÓN DE CARRITO (AHORA SOLO REQUIERE AUTENTICACIÓN)
-    // =====================================================================
-    Route::get('/test-cart-populate', [CartController::class, 'testCartPopulateAndCalculate'])->name('test.cart.populate');
 
 });
 
