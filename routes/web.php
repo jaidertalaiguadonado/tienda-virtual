@@ -3,12 +3,12 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
-use App\Http\Controllers\CartController;
+use App\Http\Controllers\CartController; // Asegúrate de que este use esté presente
 use Illuminate\Support\Facades\Route;
 use App\Models\Product;
-use App\Http\Controllers\MercadoPagoController;
+use App\Http\Controllers\MercadoPagoController; // Asegúrate de que este use esté presente
 use App\Http\Controllers\HomeController;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Auth; // Asegúrate de que este use esté presente
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\Admin\OrderController;
 
@@ -25,17 +25,19 @@ Route::get('/', function () {
     return view('welcome', compact('products'));
 })->name('welcome');
 
-// Ruta del webhook de Mercado Pago - Debe ser pública
+// Ruta del webhook de Mercado Pago - DEBE ser pública y POST
 Route::post('/mercadopago/webhook', [MercadoPagoController::class, 'handleWebhook'])->name('mercadopago.webhook');
 
 
 // =========================================================================
 // RUTAS DEL CARRITO - ACCESIBLES PARA INVITADOS Y USUARIOS AUTENTICADOS
 // =========================================================================
-Route::get('/cart', [CartController::class, 'show'])->name('cart.show');
-Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
-Route::post('/cart/update', [CartController::class, 'update'])->name('cart.update');
-Route::post('/cart/remove', [CartController::class, 'remove'])->name('cart.remove');
+// Corrección de nombres de métodos para que coincidan con CartController.php
+Route::get('/cart', [CartController::class, 'showCart'])->name('cart.show');
+Route::post('/cart/add', [CartController::class, 'addToCart'])->name('cart.add');
+Route::post('/cart/update', [CartController::class, 'updateCart'])->name('cart.update');
+Route::post('/cart/remove', [CartController::class, 'removeFromCart'])->name('cart.remove');
+Route::post('/cart/clear', [CartController::class, 'clearCart'])->name('cart.clear'); // Añadida si tienes este método
 Route::get('/api/cart-count', [CartController::class, 'getCartItemCount'])->name('api.cart.count');
 
 
@@ -47,7 +49,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/home', [HomeController::class, 'index'])->name('home');
 
     // Rutas de Mercado Pago para procesar pagos (requieren usuario logueado)
+    // createPaymentPreference es POST
     Route::post('/process-payment', [MercadoPagoController::class, 'createPaymentPreference'])->name('mercadopago.pay');
+    // Las rutas de éxito/fallo/pendiente son GET (a donde MP redirige al usuario)
     Route::get('/payment/success', [MercadoPagoController::class, 'paymentSuccess'])->name('mercadopago.success');
     Route::get('/payment/failure', [MercadoPagoController::class, 'paymentFailure'])->name('mercadopago.failure');
     Route::get('/payment/pending', [MercadoPagoController::class, 'paymentPending'])->name('mercadopago.pending');
@@ -65,11 +69,9 @@ Route::middleware('auth')->group(function () {
         return view('dashboard');
     })->name('user.dashboard');
 
-    // =====================================================================
-    // NUEVA RUTA DE DEPURACIÓN PARA MERCADO PAGO
-    // Accede a esta ruta para probar la creación de preferencia con un producto fijo.
-    // =====================================================================
-    Route::get('/debug-mercadopago-preference', [MercadoPagoController::class, 'createPaymentPreference'])->name('mercadopago.debug')->defaults('debugMode', true);
+    // Eliminada la ruta de depuración específica, ya que la depuración se maneja con logs o dd() temporales en el controlador.
+    // Si necesitas depurar el payload, puedes reactivar el dd() dentro de createPaymentPreference temporalmente.
+
 });
 
 
