@@ -29,8 +29,6 @@ class MercadoPagoController extends Controller
 
         if (empty($accessToken)) {
             \Log::critical('Mercado Pago Access Token no configurado o es nulo. Verifique su .env y config/services.php');
-            // Si quieres que la aplicación se detenga aquí si el token es nulo, puedes descomentar el siguiente dd:
-            // dd('ERROR CRÍTICO: Mercado Pago Access Token no configurado. Verifique logs.');
         } else {
             MercadoPagoConfig::setAccessToken($accessToken);
         }
@@ -59,16 +57,16 @@ class MercadoPagoController extends Controller
                 $productPriceNet = $item->product->price; // Precio NETO de la DB
 
                 // =================================================================================
-                // CAMBIO CRÍTICO: Forzar el unit_price a 2 decimales usando number_format y castear a float
+                // CAMBIO CRÍTICO: Forzar unit_price a string con 2 decimales usando sprintf
                 // =================================================================================
-                $productPriceGross = (float) number_format($productPriceNet * (1 + $this->ivaRate), 2, '.', '');
+                $productPriceGross = sprintf("%.2f", $productPriceNet * (1 + $this->ivaRate));
 
                 return [
                     'id' => $item->product_id,
                     'title' => $item->product->name,
                     'description' => Str::limit($item->product->description ?? $item->product->name, 250),
                     'quantity' => $item->quantity,
-                    'unit_price' => $productPriceGross, // Ya es un float con el formato correcto
+                    'unit_price' => (float) $productPriceGross, // Lo pasamos como float al final, pero asegurando el formato
                     'currency_id' => "COP",
                     'picture_url' => $item->product->image_url ?? asset('images/default_product.png'),
                 ];
@@ -82,16 +80,16 @@ class MercadoPagoController extends Controller
                 $priceNet = $product ? $product->price : ($item['price'] ?? 0); // Asumiendo que el precio del producto es NETO
 
                 // =================================================================================
-                // CAMBIO CRÍTICO: Forzar el unit_price a 2 decimales usando number_format y castear a float
+                // CAMBIO CRÍTICO: Forzar unit_price a string con 2 decimales usando sprintf (sesión)
                 // =================================================================================
-                $priceGross = (float) number_format($priceNet * (1 + $this->ivaRate), 2, '.', '');
+                $priceGross = sprintf("%.2f", $priceNet * (1 + $this->ivaRate));
 
                 return [
                     'id' => $item['id'],
                     'title' => $item['name'] ?? 'Producto Desconocido',
                     'description' => Str::limit($product->description ?? $item['name'] ?? 'Producto', 250),
                     'quantity' => $item['quantity'],
-                    'unit_price' => $priceGross, // Ya es un float con el formato correcto
+                    'unit_price' => (float) $priceGross, // Lo pasamos como float al final, pero asegurando el formato
                     'currency_id' => "COP",
                     'picture_url' => $item['image'] ?? asset('images/default_product.png'),
                 ];
@@ -114,29 +112,29 @@ class MercadoPagoController extends Controller
                 'description' => 'Costo por servicio de procesamiento de pago',
                 'quantity' => 1,
                 // =================================================================================
-                // CAMBIO CRÍTICO: Forzar el unit_price de la comisión a 2 decimales
+                // CAMBIO CRÍTICO: Forzar unit_price de comisión a string con 2 decimales usando sprintf
                 // =================================================================================
-                'unit_price' => (float) number_format($totals['mp_fee_amount'], 2, '.', ''),
+                'unit_price' => (float) sprintf("%.2f", $totals['mp_fee_amount']),
                 'currency_id' => "COP",
             ]);
         }
 
         // =================================================================================
-        // CAMBIO CRÍTICO: Forzar el total_final_to_pay a 2 decimales
+        // CAMBIO CRÍTICO: Forzar total_final_to_pay a string con 2 decimales usando sprintf
         // =================================================================================
-        $final_total_to_pay = (float) number_format($totals['final_total'], 2, '.', '');
+        $final_total_to_pay = (float) sprintf("%.2f", $totals['final_total']);
 
 
         // ===================================================================
-        // LOGS IMPORTANTES (mantener para monitoreo, no para depuración activa)
+        // LOGS IMPORTANTES (mantener para monitoreo)
         // ===================================================================
         \Log::info('Detalles de totales antes de enviar a Mercado Pago (FINAL):', [
             'subtotal_net_productos' => $totals['subtotal_net_products'],
             'iva_productos_calculado' => $totals['iva_products_amount'],
             'subtotal_gross_productos' => $totals['subtotal_gross_products'],
             'comision_mp_total' => $totals['mp_fee_amount'],
-            'total_final_a_pagar_cartcontroller' => $totals['final_total'], // Este es el valor original calculado
-            'total_final_a_pagar_formateado_enviado_a_mp' => $final_total_to_pay, // Este es el valor final formateado
+            'total_final_a_pagar_cartcontroller' => $totals['final_total'],
+            'total_final_a_pagar_formateado_enviado_a_mp' => $final_total_to_pay,
             'items_enviados_a_mp' => $mpItems->toArray(),
             'total_sum_of_mp_items' => $mpItems->sum(function($item){ return $item['unit_price'] * $item['quantity']; }),
         ]);
@@ -148,44 +146,29 @@ class MercadoPagoController extends Controller
             return back()->with('error', 'El monto total a pagar debe ser positivo.');
         }
 
-        $preferenceData = [
-            "items" => $mpItems->toArray(),
-            "back_urls" => [
-                "success" => route('mercadopago.success'),
-                "failure" => route('mercadopago.failure'),
-                "pending" => route('mercadopago.pending')
-            ],
-            "auto_return" => "approved",
-            "notification_url" => route('mercadopago.webhook') . '?source_news=webhooks',
-            "external_reference" => 'ORDER-' . uniqid(),
-            "statement_descriptor" => "TIENDAJD",
-            "payer" => [
-                "email" => Auth::check() ? Auth::user()->email : 'invitado@ejemplo.com',
-            ],
-            // =================================================================================
-            // CAMBIO CRÍTICO: Usar el total_final_to_pay ya formateado
-            // =================================================================================
-            "transaction_amount" => $final_total_to_pay,
-        ];
-
-        // ===================================================================
-        // DD TEMPORAL - PARA DEPURAR SI LOS LOGS NO APARECEN Y VER EL PAYLOAD FINAL
-        // ===================================================================
-        dd([
-            'Debug Point: Before Mercado Pago API call',
-            'preferenceData' => $preferenceData,
-            'final_total_to_pay' => $final_total_to_pay,
-            'mpItems' => $mpItems->toArray(),
-            'MercadoPagoConfig::getAccessToken()' => MercadoPagoConfig::getAccessToken(), // Verifica que el token se cargue
-        ]);
-        // ===================================================================
-
         $preferenceClient = new PreferenceClient();
         try {
-            // Este bloque de código ya no se ejecutará si el dd() anterior está activo.
-            // Es solo para referencia de lo que ocurriría después del dd().
+            $preferenceData = [
+                "items" => $mpItems->toArray(),
+                "back_urls" => [
+                    "success" => route('mercadopago.success'),
+                    "failure" => route('mercadopago.failure'),
+                    "pending" => route('mercadopago.pending')
+                ],
+                "auto_return" => "approved",
+                "notification_url" => route('mercadopago.webhook') . '?source_news=webhooks',
+                "external_reference" => 'ORDER-' . uniqid(),
+                "statement_descriptor" => "TIENDAJD",
+                "payer" => [
+                    "email" => Auth::check() ? Auth::user()->email : 'invitado@ejemplo.com',
+                ],
+                "transaction_amount" => $final_total_to_pay,
+            ];
+
             \Log::info('Mercado Pago Preference Payload (Final):', $preferenceData);
+
             $response = $preferenceClient->create($preferenceData);
+
             return redirect()->away($response->init_point);
 
         } catch (\MercadoPago\Exceptions\MPApiException $e) {
