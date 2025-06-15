@@ -148,32 +148,44 @@ class MercadoPagoController extends Controller
             return back()->with('error', 'El monto total a pagar debe ser positivo.');
         }
 
+        $preferenceData = [
+            "items" => $mpItems->toArray(),
+            "back_urls" => [
+                "success" => route('mercadopago.success'),
+                "failure" => route('mercadopago.failure'),
+                "pending" => route('mercadopago.pending')
+            ],
+            "auto_return" => "approved",
+            "notification_url" => route('mercadopago.webhook') . '?source_news=webhooks',
+            "external_reference" => 'ORDER-' . uniqid(),
+            "statement_descriptor" => "TIENDAJD",
+            "payer" => [
+                "email" => Auth::check() ? Auth::user()->email : 'invitado@ejemplo.com',
+            ],
+            // =================================================================================
+            // CAMBIO CRÍTICO: Usar el total_final_to_pay ya formateado
+            // =================================================================================
+            "transaction_amount" => $final_total_to_pay,
+        ];
+
+        // ===================================================================
+        // DD TEMPORAL - PARA DEPURAR SI LOS LOGS NO APARECEN Y VER EL PAYLOAD FINAL
+        // ===================================================================
+        dd([
+            'Debug Point: Before Mercado Pago API call',
+            'preferenceData' => $preferenceData,
+            'final_total_to_pay' => $final_total_to_pay,
+            'mpItems' => $mpItems->toArray(),
+            'MercadoPagoConfig::getAccessToken()' => MercadoPagoConfig::getAccessToken(), // Verifica que el token se cargue
+        ]);
+        // ===================================================================
+
         $preferenceClient = new PreferenceClient();
         try {
-            $preferenceData = [
-                "items" => $mpItems->toArray(),
-                "back_urls" => [
-                    "success" => route('mercadopago.success'),
-                    "failure" => route('mercadopago.failure'),
-                    "pending" => route('mercadopago.pending')
-                ],
-                "auto_return" => "approved",
-                "notification_url" => route('mercadopago.webhook') . '?source_news=webhooks',
-                "external_reference" => 'ORDER-' . uniqid(),
-                "statement_descriptor" => "TIENDAJD",
-                "payer" => [
-                    "email" => Auth::check() ? Auth::user()->email : 'invitado@ejemplo.com',
-                ],
-                // =================================================================================
-                // CAMBIO CRÍTICO: Usar el total_final_to_pay ya formateado
-                // =================================================================================
-                "transaction_amount" => $final_total_to_pay,
-            ];
-
+            // Este bloque de código ya no se ejecutará si el dd() anterior está activo.
+            // Es solo para referencia de lo que ocurriría después del dd().
             \Log::info('Mercado Pago Preference Payload (Final):', $preferenceData);
-
             $response = $preferenceClient->create($preferenceData);
-
             return redirect()->away($response->init_point);
 
         } catch (\MercadoPago\Exceptions\MPApiException $e) {
